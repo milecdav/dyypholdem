@@ -45,18 +45,19 @@ class PokerTreeBuilder(object):
         children = []
 
         # Action 1: fold
-        fold_node = TreeNode()
-        fold_node.type = constants.NodeTypes.terminal_fold
-        fold_node.terminal = True
-        fold_node.current_player = constants.Players(1 - parent_node.current_player.value)
-        fold_node.street = parent_node.street
-        fold_node.board = parent_node.board
-        fold_node.board_string = parent_node.board_string
-        fold_node.bets = parent_node.bets.clone()
-        children.append(fold_node)
+        if (not parent_node.terminal) and (parent_node.bets[0].item() != parent_node.bets[1].item()):
+            fold_node = TreeNode()
+            fold_node.type = constants.NodeTypes.terminal_fold
+            fold_node.terminal = True
+            fold_node.current_player = constants.Players(1 - parent_node.current_player.value)
+            fold_node.street = parent_node.street
+            fold_node.board = parent_node.board
+            fold_node.board_string = parent_node.board_string
+            fold_node.bets = parent_node.bets.clone()
+            children.append(fold_node)
 
         # Action 2: check/call
-        if ((parent_node.street == 1 and parent_node.current_player == constants.Players.P1 and parent_node.num_bets == 1) or
+        if ((parent_node.street == 1 and parent_node.current_player == constants.Players.P1 and parent_node.num_bets == 1 and parent_node.bets[constants.Players.P2.value].item() == game_settings.big_blind) or
                 ((parent_node.street != 1 or constants.streets_count == 1) and
                  parent_node.current_player == constants.Players.P2 and parent_node.bets[0].item() == parent_node.bets[1].item())):
             check_node = TreeNode()
@@ -178,6 +179,7 @@ class PokerTreeBuilder(object):
         root.current_player = build_tree_params.root_node.current_player
         root.bets = build_tree_params.root_node.bets.clone()
         root.num_bets = build_tree_params.root_node.num_bets
+        root.type = constants.NodeTypes.root_node
 
         root.bet_sizing = build_tree_params.bet_sizing or BetSizing(game_settings.bet_sizing)
         assert root.bet_sizing, "no bet sizes defined"
