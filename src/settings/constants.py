@@ -31,9 +31,10 @@ class Players(Enum):
 class NodeTypes(Enum):
     terminal_fold = -2
     terminal_call = -1
-    inner_check = -1
+    inner_check = 2
     chance_node = 0
     inner_raise = 1
+    root_node = 3
     undefined = -9
 
 
