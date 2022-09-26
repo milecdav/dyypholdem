@@ -40,13 +40,15 @@ class ProcessedState(object):
 
     def __repr__(self):
         line_1 = f"{arguments.street_names[self.current_street]} - Position: {self.position} / {repr(self.player)} - Pocket cards: {self.my_hand_string} - Board: {self.board} - "
-        if self.actions[self.current_street-1]:
-            last_action = self.actions[self.current_street-1][len(self.actions[self.current_street-1])-1]
+        if self.actions[self.current_street - 1]:
+            last_action = self.actions[self.current_street - 1][len(self.actions[self.current_street - 1]) - 1]
         else:
             if self.current_street == 1:
                 last_action = Action()
+            elif self.bet1 == self.bet2 and self.bet1 == game_settings.stack:
+                last_action = Action(action=constants.ACPCActions.ccall)
             else:
-                last_action = self.actions[self.current_street-2][len(self.actions[self.current_street-2]) - 1]
+                last_action = self.actions[self.current_street - 2][len(self.actions[self.current_street - 2]) - 1]
         line_2 = f"Last Action: {last_action.__repr__()} - My Bet: {self.bet2 if self.position == 0 else self.bet1} - Opp Bet: {self.bet1 if self.position == 0 else self.bet2}"
         return line_1 + line_2
 
@@ -174,7 +176,6 @@ def _bet_to_protocol_action(advised_action):
 # -- * `hand_p2`: a string representation of the second player's private hand
 # -- @local
 def _parse_state(state):
-
     out = ParsedState()
 
     (position, hand_id, actions, cards) = re.compile(r"^MATCHSTATE:(\d):(\d*):([^:]*):(.*)").search(state).groups()
@@ -228,7 +229,6 @@ def _parse_state(state):
 # -- * `bet1`, `bet2`: the number of chips committed by each player
 # -- @local
 def _process_parsed_state(parsed_state) -> ProcessedState:
-
     out = ProcessedState()
 
     # 1.0 figure out the current street
@@ -262,15 +262,16 @@ def _process_parsed_state(parsed_state) -> ProcessedState:
 
     arguments.logger.trace(f"ACPC position: {out.position}, Player: {repr(out.player)}, Hand: {out.my_hand_string}")
 
-    acting_player = _get_acting_player(out)
-    out.acting_player = acting_player
-
     # 5.0 compute bets
     bets = _compute_bets(out)
-    arguments.logger.trace(f"Acting Player: {repr(out.acting_player)}, Computed bets: {bets[0]}, {bets[1]}, Bets: {bets}")
 
     out.bet1 = bets[0]
     out.bet2 = bets[1]
+
+    acting_player = _get_acting_player(out)
+    out.acting_player = acting_player
+
+    arguments.logger.trace(f"Acting Player: {repr(out.acting_player)}, Computed bets: {bets[0]}, {bets[1]}, Bets: {bets}")
 
     return out
 
@@ -282,7 +283,6 @@ def _process_parsed_state(parsed_state) -> ProcessedState:
 # -- * `raise_amount`: the number of chips raised (if `action` is raise)
 # -- @local
 def _parse_actions(actions: str):
-
     out = []
     actions_remainder: str = actions
 
@@ -319,6 +319,10 @@ def _get_acting_player(processed_state: ProcessedState):
         return constants.Players.P1
 
     last_action = processed_state.all_actions[len(processed_state.all_actions) - 1]
+
+    if last_action.action == constants.ACPCActions.ccall and processed_state.bet1 == processed_state.bet2 and processed_state.bet1 == game_settings.stack:
+        return constants.Players.Chance
+
     # has the street changed since the last action?
     if last_action.street != processed_state.current_street:
         return constants.Players.P2
@@ -342,8 +346,7 @@ def _get_acting_player(processed_state: ProcessedState):
 # -- @return the number of chips committed by the second player
 # -- @local
 def _compute_bets(processed_state):
-
-    if processed_state.acting_player == constants.Players.Chance and processed_state.all_actions[-1].action == constants.ACPCActions.fold:
+    if processed_state.all_actions[-1].action == constants.ACPCActions.fold:
         valid_actions = len(processed_state.all_actions) - 1
     else:
         valid_actions = len(processed_state.all_actions)
@@ -395,7 +398,7 @@ def _compute_bets(processed_state):
 def _convert_actions(actions):
     all_actions = []
     for street in range(4):
-        _convert_actions_street(actions[street], street+1, all_actions)
+        _convert_actions_street(actions[street], street + 1, all_actions)
     return all_actions
 
 
@@ -406,7 +409,6 @@ def _convert_actions(actions):
 # -- `street`, and `index` are added to each action.
 # -- @local
 def _convert_actions_street(actions, street, all_actions):
-
     street_first_player = street == 1 and constants.Players.P1 or constants.Players.P2
 
     if street == 1:
