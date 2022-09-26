@@ -1,4 +1,3 @@
-
 import settings.arguments as arguments
 import settings.game_settings as game_settings
 import settings.constants as constants
@@ -211,14 +210,16 @@ class LookaheadBuilder(object):
         # create the data structures for the rest of the layers
         for d in range(3, self.lookahead.depth + 1):
             # data structures [actions x parent_action x grandparent_id x batch x players x range]
-            self.lookahead.ranges_data[d] = arguments.Tensor(self.lookahead.actions_count[d - 1], self.lookahead.bets_count[d - 2], self.lookahead.nonterminal_nonallin_nodes_count[d - 2], self.lookahead.batch_size, constants.players_count,
+            self.lookahead.ranges_data[d] = arguments.Tensor(self.lookahead.actions_count[d - 1], self.lookahead.bets_count[d - 2], self.lookahead.nonterminal_nonallin_nodes_count[d - 2], self.lookahead.batch_size,
+                                                             constants.players_count,
                                                              game_settings.hand_count).fill_(0)
             self.lookahead.cfvs_data[d] = self.lookahead.ranges_data[d].clone()
             self.lookahead.placeholder_data[d] = self.lookahead.ranges_data[d].clone()
             self.lookahead.pot_size[d] = self.lookahead.ranges_data[d].clone().fill_(game_settings.stack)
 
             # data structures [actions x parent_action x grandparent_id x batch x 1 x range]
-            self.lookahead.average_strategies_data[d] = arguments.Tensor(self.lookahead.actions_count[d - 1], self.lookahead.bets_count[d - 2], self.lookahead.nonterminal_nonallin_nodes_count[d - 2], self.lookahead.batch_size,
+            self.lookahead.average_strategies_data[d] = arguments.Tensor(self.lookahead.actions_count[d - 1], self.lookahead.bets_count[d - 2], self.lookahead.nonterminal_nonallin_nodes_count[d - 2],
+                                                                         self.lookahead.batch_size,
                                                                          game_settings.hand_count).fill_(0)
             self.lookahead.current_strategy_data[d] = self.lookahead.average_strategies_data[d].clone()
             self.lookahead.regrets_data[d] = self.lookahead.average_strategies_data[d].clone().fill_(self.lookahead.regret_epsilon)
@@ -227,13 +228,16 @@ class LookaheadBuilder(object):
             self.lookahead.positive_regrets_data[d] = self.lookahead.regrets_data[d].clone()
 
             # data structures [1 x parent_action x grandparent_id x batch x players x range]
-            self.lookahead.regrets_sum[d] = arguments.Tensor(1, self.lookahead.bets_count[d - 2], self.lookahead.nonterminal_nonallin_nodes_count[d - 2], self.lookahead.batch_size, constants.players_count, game_settings.hand_count).fill_(0)
+            self.lookahead.regrets_sum[d] = arguments.Tensor(1, self.lookahead.bets_count[d - 2], self.lookahead.nonterminal_nonallin_nodes_count[d - 2], self.lookahead.batch_size, constants.players_count,
+                                                             game_settings.hand_count).fill_(0)
 
             # data structures for the layers except the last one
             if d < self.lookahead.depth:
-                self.lookahead.inner_nodes[d] = arguments.Tensor(self.lookahead.bets_count[d - 1], self.lookahead.nonallinbets_count[d - 2], self.lookahead.nonterminal_nonallin_nodes_count[d - 2], self.lookahead.batch_size,
+                self.lookahead.inner_nodes[d] = arguments.Tensor(self.lookahead.bets_count[d - 1], self.lookahead.nonallinbets_count[d - 2], self.lookahead.nonterminal_nonallin_nodes_count[d - 2],
+                                                                 self.lookahead.batch_size,
                                                                  constants.players_count, game_settings.hand_count).fill_(0)
-                self.lookahead.inner_nodes_p1[d] = arguments.Tensor(self.lookahead.bets_count[d - 1], self.lookahead.nonallinbets_count[d - 2], self.lookahead.nonterminal_nonallin_nodes_count[d - 2], self.lookahead.batch_size, 1,
+                self.lookahead.inner_nodes_p1[d] = arguments.Tensor(self.lookahead.bets_count[d - 1], self.lookahead.nonallinbets_count[d - 2], self.lookahead.nonterminal_nonallin_nodes_count[d - 2],
+                                                                    self.lookahead.batch_size, 1,
                                                                     game_settings.hand_count).fill_(0)
                 self.lookahead.swap_data[d] = self.lookahead.inner_nodes[d].transpose(1, 2).clone()
 
