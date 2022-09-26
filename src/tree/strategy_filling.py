@@ -1,4 +1,3 @@
-
 import settings.arguments as arguments
 import settings.constants as constants
 import settings.game_settings as game_settings
@@ -49,7 +48,7 @@ class StrategyFilling(object):
     # -- @local
     @staticmethod
     def _fill_uniformly(node):
-        assert  node.current_player == constants.Players.P1 or node.current_player == constants.Players.P2
+        assert node.current_player == constants.Players.P1 or node.current_player == constants.Players.P2
 
         if not node.terminal:
             node.strategy = arguments.Tensor(len(node.children), game_settings.hand_count).fill_(1.0 / len(node.children))
