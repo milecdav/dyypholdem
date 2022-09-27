@@ -56,7 +56,7 @@ def play_slumbot():
     for hand in range(num_hands):
         token, hand_winnings = play_hand(token, hand)
         winnings += hand_winnings
-        arguments.logger.success(f"Hand completed. Hand winnings: {hand_winnings}, Total winnings: {winnings} ")
+        arguments.logger.success(f"Hand completed. Hand winnings: {hand_winnings}, Total winnings: {winnings} in hand {hand}")
 
     arguments.logger.success(f"Game ended >>> Total winnings: {winnings}")
 
