@@ -50,7 +50,7 @@ class LookaheadBuilder(object):
         self._set_datastructures_from_tree_dfs(tree, 1, 1, 1, 1, -100)
 
         # set additional info
-        assert self.lookahead.terminal_actions_count[1] == 1 or self.lookahead.terminal_actions_count[1] == 2
+        assert self.lookahead.terminal_actions_count[1] <= 2
 
         # we mask out fold as a possible action when check is for free, due to
         # 1) fewer actions means faster convergence
@@ -129,10 +129,8 @@ class LookaheadBuilder(object):
         self.lookahead.nonallinbets_count[current_depth] = layer_actions_count - layer_terminal_actions_count
         # remove allin
         self.lookahead.nonallinbets_count[current_depth] -= 1
-        # if no alllin...
-        if layer_actions_count == 2:
-            assert layer_actions_count == layer_terminal_actions_count, "error in tree"
-            self.lookahead.nonallinbets_count[current_depth] = 0
+        # make sure we do not end with -1 nonallin bets if there is only call and fold
+        self.lookahead.nonallinbets_count[current_depth] = max(self.lookahead.nonallinbets_count[current_depth], 0)
         self.lookahead.terminal_actions_count[current_depth] = layer_terminal_actions_count
         self.lookahead.actions_count[current_depth] = layer_actions_count
 
