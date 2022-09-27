@@ -30,9 +30,9 @@ def run(server, port):
             # 2.2 get the player's action
             # print("Please enter your action (f/c/#):")
             if state.bet1 == state.bet2:
-                action = np.random.choice(["f", "c", "0.5", "1", "2", "a"])
-            else:
                 action = np.random.choice(["c", "0.5", "1", "2", "a"])
+            else:
+                action = np.random.choice(["f", "c", "0.5", "1", "2", "a"])
 
             if action == "f":
                 acpc_action = Action(action=constants.ACPCActions.fold)
@@ -71,6 +71,8 @@ if __name__ == "__main__":
 
     from server.acpc_game import ACPCGame
     from server.protocol_to_node import Action, ProcessedState
+
+    np.random.seed(0)
 
     arguments.logger.remove(1)
 
