@@ -317,7 +317,7 @@ class SlumbotGame(object):
                     return {'error': 'Bet size not an integer'}
                 new_last_bet_size = new_street_last_bet_to - street_last_bet_to
                 # Validate that the bet is legal
-                remaining = STACK_SIZE - street_last_bet_to
+                remaining = STACK_SIZE - total_last_bet_to
                 if last_bet_size > 0:
                     min_bet_size = last_bet_size
                     # Make sure minimum opening bet is the size of the big blind.
