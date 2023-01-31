@@ -1,12 +1,12 @@
 import os
 import sys
 import argparse
+
 sys.path.append(os.getcwd())
 
 
 def play_hand(token, hand):
-
-    winnings = 0
+    failed = False
 
     response = slumbot_game.new_hand(token)
     new_token = response.get('token')
@@ -20,13 +20,19 @@ def play_hand(token, hand):
     # game goes on
     if winnings is None:
 
-        arguments.logger.info(f"Starting new hand #{hand+1}")
+        arguments.logger.info(f"Starting new hand #{hand + 1}")
         continual_resolving.start_new_hand(current_state)
 
         while True:
             # use continual resolving to find a strategy and make an action in the current node
-            advised_action: protocol_to_node.Action = continual_resolving.compute_action(current_state, current_node)
-
+            try:
+                advised_action: protocol_to_node.Action = continual_resolving.compute_action(current_state, current_node)
+            except:
+                failed = True
+                if current_state.bet1 == current_state.bet2:
+                    advised_action = Action(action=constants.ACPCActions.ccall, raise_amount=abs(current_state.bet1 - current_state.bet2))
+                else:
+                    advised_action = Action(action=constants.ACPCActions.fold)
             # send the action to the server
             response = slumbot_game.play_action(token, advised_action)
             current_state, current_node = slumbot_game.get_next_situation(response)
@@ -46,19 +52,24 @@ def play_hand(token, hand):
         torch.cuda.empty_cache()
         arguments.logger.trace(f"Garbage collection performed. Allocated memory={torch.cuda.memory_allocated('cuda')}, Reserved memory={torch.cuda.memory_reserved('cuda')}")
 
-    return token, winnings
+    return token, winnings, failed
 
 
 def play_slumbot():
     token = None
     num_hands = args.hands
     winnings = 0
+    failed = 0
     for hand in range(num_hands):
-        token, hand_winnings = play_hand(token, hand)
+        token, hand_winnings, hand_failed = play_hand(token, hand)
         winnings += hand_winnings
+        if hand_failed:
+            failed += 1
+            arguments.logger.error(f"Bot crashed. Game was completed as always fold.")
         arguments.logger.success(f"Hand completed. Hand winnings: {hand_winnings}, Total winnings: {winnings} in hand {hand}")
 
     arguments.logger.success(f"Game ended >>> Total winnings: {winnings}")
+    arguments.logger.success(f"Total crashes: {failed}")
 
 
 if __name__ == '__main__':
@@ -75,6 +86,9 @@ if __name__ == '__main__':
     from server.slumbot_game import SlumbotGame
     import server.protocol_to_node as protocol_to_node
     from lookahead.continual_resolving import ContinualResolving
+
+    import settings.constants as constants
+    from server.protocol_to_node import Action, ProcessedState
 
     slumbot_game = SlumbotGame()
     continual_resolving = ContinualResolving()
