@@ -1,11 +1,27 @@
 import os
 import sys
 import argparse
+from multiprocessing import Pool
+
+import gc
+
+import torch
+
+import settings.arguments as arguments
+
+from server.slumbot_game import SlumbotGame
+import server.protocol_to_node as protocol_to_node
+from lookahead.continual_resolving import ContinualResolving
+
+import settings.constants as constants
+from server.protocol_to_node import Action, ProcessedState
+
+import numpy as np
 
 sys.path.append(os.getcwd())
 
 
-def play_hand(token, hand):
+def play_hand(token, hand, slumbot_game, continual_resolving):
     failed = False
 
     response = slumbot_game.new_hand(token)
@@ -55,13 +71,14 @@ def play_hand(token, hand):
     return token, winnings, failed
 
 
-def play_slumbot():
+def play_slumbot(num_hands):
+    slumbot_game = SlumbotGame()
+    continual_resolving = ContinualResolving()
     token = None
-    num_hands = args.hands
     winnings = 0
     failed = 0
     for hand in range(num_hands):
-        token, hand_winnings, hand_failed = play_hand(token, hand)
+        token, hand_winnings, hand_failed = play_hand(token, hand, slumbot_game, continual_resolving)
         winnings += hand_winnings
         if hand_failed:
             failed += 1
@@ -70,27 +87,22 @@ def play_slumbot():
 
     arguments.logger.success(f"Game ended >>> Total winnings: {winnings}")
     arguments.logger.success(f"Total crashes: {failed}")
+    return winnings
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Play with DyypHoldem against Slumbot')
     parser.add_argument('hands', type=int, help="Number of hands to play against Slumbot")
+    parser.add_argument('--multithread', type=int, help="Number of games to play in parallel")
     args = parser.parse_args()
 
-    import gc
-
-    import torch
-
-    import settings.arguments as arguments
-
-    from server.slumbot_game import SlumbotGame
-    import server.protocol_to_node as protocol_to_node
-    from lookahead.continual_resolving import ContinualResolving
-
-    import settings.constants as constants
-    from server.protocol_to_node import Action, ProcessedState
-
-    slumbot_game = SlumbotGame()
-    continual_resolving = ContinualResolving()
-
-    play_slumbot()
+    if args.multithread:
+        num_hands_array = np.full(args.multithread, fill_value=int(args.hands / args.multithread), dtype=int)
+        i = 0
+        while np.sum(num_hands_array) < args.hands:
+            num_hands_array[i] += 1
+            i += 1
+        all_winnings = Pool(args.multithread).map(play_slumbot, num_hands_array)
+        arguments.logger.success(f"Experiment ended >>> All the winnings: {all_winnings}")
+    else:
+        play_slumbot(args.hands)
