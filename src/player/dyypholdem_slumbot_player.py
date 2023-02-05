@@ -3,6 +3,8 @@ import sys
 import argparse
 from multiprocessing import Pool
 
+sys.path.append(os.getcwd())
+
 import gc
 
 import torch
@@ -18,7 +20,7 @@ from server.protocol_to_node import Action, ProcessedState
 
 import numpy as np
 
-sys.path.append(os.getcwd())
+
 
 
 def play_hand(token, hand, slumbot_game, continual_resolving):
