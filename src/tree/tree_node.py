@@ -27,6 +27,9 @@ class TreeNode:
     pot: torch.Tensor = None
     lookahead_coordinates: arguments.Tensor = None
 
+    def simple_string(self):
+        return f"Type={self.type}, depth={self.depth}, street={arguments.street_names[self.street]}, player={self.current_player}, bets=({self.bets[0].item()}, {self.bets[1].item()}), pot={self.pot}"
+
     def __repr__(self, level=0):
         if level > 3:
             return ''
@@ -48,4 +51,3 @@ class BuildTreeParams:
     root_node: TreeNode
     limit_to_street: bool
     bet_sizing: BetSizing = None
-

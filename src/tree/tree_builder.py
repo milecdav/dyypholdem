@@ -45,16 +45,16 @@ class PokerTreeBuilder(object):
         children = []
 
         # Action 1: fold
-        if (not parent_node.terminal) and (parent_node.bets[0].item() != parent_node.bets[1].item()):
-            fold_node = TreeNode()
-            fold_node.type = constants.NodeTypes.terminal_fold
-            fold_node.terminal = True
-            fold_node.current_player = constants.Players(1 - parent_node.current_player.value)
-            fold_node.street = parent_node.street
-            fold_node.board = parent_node.board
-            fold_node.board_string = parent_node.board_string
-            fold_node.bets = parent_node.bets.clone()
-            children.append(fold_node)
+        # if (not parent_node.terminal) and (parent_node.bets[0].item() != parent_node.bets[1].item()):
+        fold_node = TreeNode()
+        fold_node.type = constants.NodeTypes.terminal_fold
+        fold_node.terminal = True
+        fold_node.current_player = constants.Players(1 - parent_node.current_player.value)
+        fold_node.street = parent_node.street
+        fold_node.board = parent_node.board
+        fold_node.board_string = parent_node.board_string
+        fold_node.bets = parent_node.bets.clone()
+        children.append(fold_node)
 
         # Action 2: check/call
         if ((parent_node.street == 1 and parent_node.current_player == constants.Players.P1 and parent_node.num_bets == 1 and parent_node.bets[constants.Players.P2.value].item() == game_settings.big_blind) or
@@ -72,7 +72,7 @@ class PokerTreeBuilder(object):
             children.append(check_node)
         elif (parent_node.street != constants.streets_count and
               ((parent_node.bets[0] == parent_node.bets[1] and ((parent_node.street == 1 and parent_node.current_player == constants.Players.P2) or
-               (parent_node.street != 1 and parent_node.current_player == constants.Players.P1))) or
+                                                                (parent_node.street != 1 and parent_node.current_player == constants.Players.P1))) or
                (parent_node.bets[0] != parent_node.bets[1] and parent_node.bets.max() < game_settings.stack))):
             chance_node = TreeNode()
             chance_node.type = constants.NodeTypes.chance_node
