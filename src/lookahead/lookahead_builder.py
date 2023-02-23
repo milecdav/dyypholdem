@@ -464,11 +464,8 @@ class LookaheadBuilder(object):
                             action_id = self.lookahead.parent_action_id[parent_action_idx]
                             assert self.lookahead.action_to_index.get(action_id) is None
                             self.lookahead.action_to_index[action_id.item()] = self.lookahead.indices[d][0] + parent_action_idx - 1
-
-        if self.lookahead.action_to_index.get(constants.Actions.ccall.value) is None:
-            print(self.lookahead.action_to_index)
-            print(self.lookahead.parent_action_id)
-            assert False, "this should not happen"
+        assert self.lookahead.action_to_index.get(constants.Actions.ccall.value) is not None, \
+            f"this should not happen action to index {self.lookahead.action_to_index} parent action id {self.lookahead.parent_action_id}"
 
         self.lookahead.next_street_boxes.start_computation(self.lookahead.next_round_pot_sizes, self.lookahead.batch_size)
         self.lookahead.next_street_boxes_inputs = arguments.Tensor(self.lookahead.num_pot_sizes, self.lookahead.batch_size, constants.players_count, game_settings.hand_count).zero_()
