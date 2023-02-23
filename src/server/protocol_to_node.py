@@ -320,6 +320,7 @@ def _get_acting_player(processed_state: ProcessedState):
 
     last_action = processed_state.all_actions[len(processed_state.all_actions) - 1]
 
+    # ALL IN
     if last_action.action == constants.ACPCActions.ccall and processed_state.bet1 == processed_state.bet2 and processed_state.bet1 == game_settings.stack:
         return constants.Players.Chance
 
