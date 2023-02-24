@@ -11,6 +11,13 @@ continual_resolving = ContinualResolving()
 
 game_hands = [
     [
+        {'old_action': '', 'action': 'b200', 'client_pos': 0, 'hole_cards': ['Ac', '5c'], 'board': []},
+        {'old_action': 'b200', 'action': 'b200b600c/', 'client_pos': 0, 'hole_cards': ['Ac', '5c'], 'board': ['9h', '6c', '4c']},
+        {'old_action': 'b200b600c/', 'action': 'b200b600c/b1200c/', 'client_pos': 0, 'hole_cards': ['Ac', '5c'], 'board': ['9h', '6c', '4c', 'Qc']},
+        {'old_action': 'b200b600c/b1200c/', 'action': 'b200b600c/b1200c/b3600b9000', 'client_pos': 0, 'hole_cards': ['Ac', '5c'], 'board': ['9h', '6c', '4c', 'Qc']},
+        {'old_action': 'b200b600c/b1200c/b3600b9000', 'action': 'b200b600c/b1200c/b3600b9000c/', 'client_pos': 0, 'hole_cards': ['Ac', '5c'], 'board': ['9h', '6c', '4c', 'Qc', '8h']},
+    ],
+    [
         {'old_action': '', 'action': 'b200', 'client_pos': 0, 'hole_cards': ['Jc', 'Tc'], 'board': []},
         {'old_action': 'b200', 'action': 'b200b600b1800', 'client_pos': 0, 'hole_cards': ['Jc', 'Tc'], 'board': []},
         {'old_action': 'b200b600b1800', 'action': 'b200b600b1800c/', 'client_pos': 0, 'hole_cards': ['Jc', 'Tc'], 'board': ['As', 'Qc', '4s']},
@@ -51,6 +58,7 @@ def run(msg):
     # do we have a new hand?
     if winnings:
         print(f"Hand ended with winnings: {winnings}")
+        return
     # use continual resolving to find a strategy and make an action in the current node
     advised_action: protocol_to_node.Action = continual_resolving.compute_action(current_state, current_node)
 
@@ -90,8 +98,6 @@ if __name__ == "__main__":
     from server.slumbot_game import SlumbotGame
 
     import utils.pseudo_random as random_
-
-    random_.manual_seed(0)
 
     slumbot_game = SlumbotGame()
 
