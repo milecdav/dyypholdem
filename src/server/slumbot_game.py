@@ -124,7 +124,7 @@ class SlumbotGame(object):
             if self.bet_this_street + self.bet_previous_streets > game_settings.stack:
                 self.bet_this_street = game_settings.stack - self.bet_previous_streets
                 arguments.logger.warning(f"Bet size corrected for all-in: {self.bet_this_street}")
-            elif self.bet_this_street < self.max_bet:
+            elif self.bet_this_street < self.max_bet and self.bet_this_street + self.bet_previous_streets < game_settings.stack:
                 self.bet_this_street = self.max_bet
                 arguments.logger.warning(f"Bet size corrected to be min bet size: {self.bet_this_street}")
             next_action = f"b{self.bet_this_street}"
