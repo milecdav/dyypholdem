@@ -20,7 +20,7 @@ from server.protocol_to_node import Action, ProcessedState
 
 import numpy as np
 
-
+from utils.log_to_file import log_line
 
 
 def play_hand(token, hand, slumbot_game, continual_resolving):
@@ -75,13 +75,15 @@ def play_hand(token, hand, slumbot_game, continual_resolving):
 
 def play_slumbot(num_hands):
     slumbot_game = SlumbotGame()
+    token = check_credentials(slumbot_game)
     continual_resolving = ContinualResolving()
-    token = None
     winnings = 0
     failed = 0
     for hand in range(num_hands):
         token, hand_winnings, hand_failed = play_hand(token, hand, slumbot_game, continual_resolving)
         winnings += hand_winnings
+        if args.log:
+            log_line(f"{hand} {winnings}", args.log)
         if hand_failed:
             failed += 1
             arguments.logger.error(f"Bot crashed. Game was completed as always fold.")
@@ -92,10 +94,21 @@ def play_slumbot(num_hands):
     return winnings
 
 
+def check_credentials(slumbot_game):
+    token = slumbot_game.login(arguments.slumbot_username, arguments.slumbot_password)
+    if token is None:
+        arguments.logger.error("Login failed.")
+        sys.exit(1)
+    else:
+        arguments.logger.success("Login successful.")
+    return token
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Play with DyypHoldem against Slumbot')
     parser.add_argument('hands', type=int, help="Number of hands to play against Slumbot")
     parser.add_argument('--multithread', type=int, help="Number of games to play in parallel")
+    parser.add_argument('--log', type=str, help="Log file name")
     args = parser.parse_args()
 
     if args.multithread:
