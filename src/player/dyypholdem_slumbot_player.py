@@ -111,6 +111,9 @@ if __name__ == '__main__':
     parser.add_argument('--log', type=str, help="Log file name")
     args = parser.parse_args()
 
+    if args.log:
+        arguments.logger.success("Logging to file: " + args.log + " in directory " + os.getcwd())
+
     if args.multithread:
         num_hands_array = np.full(args.multithread, fill_value=int(args.hands / args.multithread), dtype=int)
         i = 0
