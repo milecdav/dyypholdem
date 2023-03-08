@@ -83,7 +83,7 @@ def play_slumbot(num_hands):
         token, hand_winnings, hand_failed = play_hand(token, hand, slumbot_game, continual_resolving)
         winnings += hand_winnings
         if args.log:
-            log_line(f"{hand} {winnings}", args.log)
+            log_line(f"{hand} {hand_winnings} {winnings}", args.log)
         if hand_failed:
             failed += 1
             arguments.logger.error(f"Bot crashed. Game was completed as always fold.")
