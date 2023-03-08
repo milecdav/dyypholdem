@@ -115,7 +115,7 @@ class SlumbotGame(object):
             else:
                 next_action = "c"
                 arguments.logger.debug(f"Calling bet of: {self.current_state['street_last_bet_to']}")
-                self.bet_this_street += self.current_state["street_last_bet_to"]
+                self.bet_this_street = self.current_state["street_last_bet_to"]
         elif advised_action.action == constants.ACPCActions.rraise:
             raise_amount = advised_action.raise_amount
             arguments.logger.trace(f"Raise amount: {raise_amount}")
@@ -381,5 +381,3 @@ class SlumbotGame(object):
             'last_bet_size': last_bet_size,
             'last_bettor': last_bettor,
         }
-
-
