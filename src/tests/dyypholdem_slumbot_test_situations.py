@@ -11,6 +11,16 @@ continual_resolving = ContinualResolving()
 
 game_hands = [
     [
+        {'old_action': '', 'action': 'b200', 'client_pos': 0, 'hole_cards': ['7d', '7c'], 'board': []},
+        {'old_action': 'b200', 'action': 'b200b600b1800', 'client_pos': 0, 'hole_cards': ['7d', '7c'], 'board': []},
+        {'old_action': 'b200b600b1800', 'action': 'b200b600b1800c/', 'client_pos': 0, 'hole_cards': ['7d', '7c'], 'board': ['Qd', '3s', '2s']},
+        {'old_action': 'b200b600b1800c/', 'action': 'b200b600b1800c/kb1800', 'client_pos': 0, 'hole_cards': ['7d', '7c'], 'board': ['Qd', '3s', '2s']},
+        {'old_action': 'b200b600b1800c/kb1800', 'action': 'b200b600b1800c/kb1800c/', 'client_pos': 0, 'hole_cards': ['7d', '7c'], 'board': ['Qd', '3s', '2s', '7s']},
+        {'old_action': 'b200b600b1800c/kb1800c/', 'action': 'b200b600b1800c/kb1800c/kb3600', 'client_pos': 0, 'hole_cards': ['7d', '7c'], 'board': ['Qd', '3s', '2s', '7s']},
+        {'old_action': 'b200b600b1800c/kb1800c/kb3600', 'action': 'b200b600b1800c/kb1800c/kb3600c/', 'client_pos': 0, 'hole_cards': ['7d', '7c'], 'board': ['Qd', '3s', '2s', '7s', 'Th']},
+        {'old_action': 'b200b600b1800c/kb1800c/kb3600c/', 'action': 'b200b600b1800c/kb1800c/kb3600c/kb7200', 'client_pos': 0, 'hole_cards': ['7d', '7c'], 'board': ['Qd', '3s', '2s', '7s', 'Th']},
+    ],
+    [
         {'old_action': '', 'action': 'b200', 'client_pos': 0, 'hole_cards': ['Ac', '5c'], 'board': []},
         {'old_action': 'b200', 'action': 'b200b600c/', 'client_pos': 0, 'hole_cards': ['Ac', '5c'], 'board': ['9h', '6c', '4c']},
         {'old_action': 'b200b600c/', 'action': 'b200b600c/b1200c/', 'client_pos': 0, 'hole_cards': ['Ac', '5c'], 'board': ['9h', '6c', '4c', 'Qc']},
