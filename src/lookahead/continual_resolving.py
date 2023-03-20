@@ -1,4 +1,3 @@
-
 import torch
 
 import settings.arguments as arguments
@@ -15,7 +14,6 @@ import utils.pseudo_random as random_
 
 
 class ContinualResolving(object):
-
     last_node: TreeNode
     decision_id: int
     last_bet: int
@@ -29,7 +27,8 @@ class ContinualResolving(object):
         self.first_node_resolving: Resolving = None
         self.starting_cfvs_p1: arguments.Tensor = None
 
-        self.resolve_first_node()
+        if not arguments.cdbr:
+            self.resolve_first_node()
 
     # --- Solves a depth-limited lookahead from the first node of the game to get
     # -- opponent counterfactual values.
@@ -95,12 +94,18 @@ class ContinualResolving(object):
     # -- (a table of the type returned by @{protocol_to_node.parse_state})
     # -- @local
     def _resolve_node(self, state, node):
+        if arguments.cdbr:
+            arguments.cdbr_current_player = node.current_player
         # 1.0 first node and P1 position
         # no need to update an invariant since this is the very first situation
         if self.decision_id == 0 and self.player == constants.Players.P1:
             # the strategy computation for the first decision node has been already set up
             self.current_player_range = self.starting_player_range.clone()
-            self.resolving = self.first_node_resolving
+            if arguments.cdbr:
+                self.resolve_first_node()
+                self.resolving = self.first_node_resolving
+            else:
+                self.resolving = self.first_node_resolving
 
         # 2.0 other nodes - we need to update the invariant
         else:
@@ -245,4 +250,3 @@ class ContinualResolving(object):
         else:
             assert sampled_bet >= 0
             return Action(action=constants.ACPCActions.rraise, raise_amount=sampled_bet)
-

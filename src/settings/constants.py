@@ -57,6 +57,11 @@ class ACPCActions(Enum):
     rraise = "raise"
 
 
+class CDBRType(Enum):
+    always_fold = "always_fold"
+    always_call = "always_call"
+
+
 # --- An arbitrarily large number used for clamping regrets.
 # --@return the number
 def max_number():
