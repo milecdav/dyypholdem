@@ -81,6 +81,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Play poker on an ACPC server')
     parser.add_argument('hostname', type=str, help="Hostname/IP of the server running ACPC dealer")
     parser.add_argument('port', type=int, help="Port to connect on the ACPC server")
+    parser.add_argument('--log', type=str, help="Log file name")
     args = parser.parse_args()
 
     import gc
