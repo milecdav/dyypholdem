@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 sys.path.append(os.getcwd())
+from utils.log_to_file import log_line
 
 
 last_state = None
@@ -20,6 +21,7 @@ def run(server, port):
     current_node: TreeNode
 
     winnings = 0
+    hand = 0
 
     # 2.0 main loop that waits for a situation where we act and then chooses an action
     while True:
@@ -68,6 +70,9 @@ def run(server, port):
         else:
             winnings += hand_winnings
             arguments.logger.success(f"Hand completed. Hand winnings: {hand_winnings}, Total winnings: {winnings}")
+            if args.log:
+                log_line(f"{hand} {hand_winnings} {winnings}", args.log)
+            hand += 1
 
     arguments.logger.success(f"Game ended >>> Total winnings: {winnings}")
 
