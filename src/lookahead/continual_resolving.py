@@ -66,6 +66,10 @@ class ContinualResolving(object):
         self.player = state.player
         self.hand_id = state.hand_id
 
+        if arguments.cdbr:
+            arguments.cdbr_normal_resolve = self.player == constants.Players.P1
+            self.resolve_first_node()
+
     # --- Re-solves a node and chooses the re-solving player's next action.
     # -- @param node the game node where the re-solving player is to act (a table of
     # -- the type returned by @{protocol_to_node.parsed_state_to_node})
@@ -94,24 +98,19 @@ class ContinualResolving(object):
     # -- (a table of the type returned by @{protocol_to_node.parse_state})
     # -- @local
     def _resolve_node(self, state, node):
-        if arguments.cdbr:
-            arguments.cdbr_current_player = node.current_player
         # 1.0 first node and P1 position
         # no need to update an invariant since this is the very first situation
         if self.decision_id == 0 and self.player == constants.Players.P1:
             # the strategy computation for the first decision node has been already set up
             self.current_player_range = self.starting_player_range.clone()
-            if arguments.cdbr:
-                self.resolve_first_node()
-                self.resolving = self.first_node_resolving
-            else:
-                self.resolving = self.first_node_resolving
+            self.resolving = self.first_node_resolving
 
         # 2.0 other nodes - we need to update the invariant
         else:
             assert not node.terminal
             assert node.current_player == self.player
 
+            arguments.cdbr_normal_resolve = True
             arguments.logger.debug(f"Resolving current node with {arguments.cfr_iters} iterations")
 
             # 2.1 update the invariant based on actions we did not make

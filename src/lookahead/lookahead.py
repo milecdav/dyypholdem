@@ -224,18 +224,18 @@ class Lookahead(object):
             self._compute_cfvs()
             self._compute_regrets()
             self._compute_cumulate_average_cfvs(iteration)
-            # print([self.current_strategy_data[2][i, :, :, :, 0] for i in range(self.current_strategy_data[2].shape[0])])
-            # print([self.average_strategies_data[2][i, :, :, :, 0] for i in range(self.current_strategy_data[2].shape[0])])
-            # print([self.cfvs_data[2][i, :, :, :, :, 0] for i in range(self.current_strategy_data[2].shape[0])])
+        # print([self.current_strategy_data[3][i, :, :, :, 0] for i in range(self.current_strategy_data[3].shape[0])])
+        # print([self.average_strategies_data[2][i, :, :, :, 0] for i in range(self.current_strategy_data[2].shape[0])])
+        # print([self.cfvs_data[2][i, :, :, :, :, 0] for i in range(self.current_strategy_data[2].shape[0])])
 
-            # 2.0 at the end normalize average strategy
+        # 2.0 at the end normalize average strategy
         self._compute_normalize_average_strategies()
         # 2.1 normalize root's CFVs
         self._compute_normalize_average_cfvs()
 
     def _initialize_opponent_strategy(self):
         for d in range(2, self.depth + 1):
-            if self.acting_player[d - 1] - 1 != arguments.cdbr_current_player.value:
+            if (arguments.cdbr_normal_resolve and d % 2 != 0) or (not arguments.cdbr_normal_resolve and d % 2 == 0):
                 if arguments.cdbr_type == constants.CDBRType.always_fold:
                     self.current_strategy_data[d][0, :, :, :, :] = 1.
                 elif arguments.cdbr_type == constants.CDBRType.always_call:
@@ -247,9 +247,12 @@ class Lookahead(object):
     # -- @local
     def _set_opponent_starting_range(self):
         if self.reconstruction_opponent_cfvs is not None:
-            # note that CFVs indexing is swapped, thus the CFVs for the reconstruction player are for player '1'
-            opponent_range = self.reconstruction_gadget.compute_opponent_range(self.cfvs_data[1][:, :, :, :, 0, :])
-            self.ranges_data[1][:, :, :, :, 1, :].copy_(opponent_range)
+            if arguments.cdbr:
+                self.ranges_data[1][:, :, :, :, 1, :].copy_(self.reconstruction_gadget.input_opponent_range)
+            else:
+                # note that CFVs indexing is swapped, thus the CFVs for the reconstruction player are for player '1'
+                opponent_range = self.reconstruction_gadget.compute_opponent_range(self.cfvs_data[1][:, :, :, :, 0, :])
+                self.ranges_data[1][:, :, :, :, 1, :].copy_(opponent_range)
 
     # --- Uses regret matching to generate the players' current strategies.
     # -- @local
@@ -264,7 +267,7 @@ class Lookahead(object):
             # 1.1  regret matching
             # note that the regrets as well as the CFVs have switched player indexing
             self.regrets_sum[d] = torch.sum(self.positive_regrets_data[d], 0)
-            if not arguments.cdbr or self.acting_player[d - 1] - 1 == arguments.cdbr_current_player.value:
+            if not ((arguments.cdbr_normal_resolve and d % 2 != 0) or (not arguments.cdbr_normal_resolve and d % 2 == 0)):
                 self.current_strategy_data[d] = torch.div(self.positive_regrets_data[d], self.regrets_sum[d].expand_as(self.positive_regrets_data[d]))
 
     # --- Using the players' current strategies, computes their probabilities of
