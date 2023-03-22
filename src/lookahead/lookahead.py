@@ -217,14 +217,13 @@ class Lookahead(object):
             self._initialize_opponent_strategy()
         for iteration in range(1, arguments.cfr_iters + 1):
             self._set_opponent_starting_range()
-            self._compute_current_strategies()
+            self._compute_current_strategies(iteration)
             self._compute_ranges()
             self._compute_update_average_strategies(iteration)
             self._compute_terminal_equities()
             self._compute_cfvs()
             self._compute_regrets()
             self._compute_cumulate_average_cfvs(iteration)
-        # print([self.current_strategy_data[3][i, :, :, :, 0] for i in range(self.current_strategy_data[3].shape[0])])
         # print([self.average_strategies_data[2][i, :, :, :, 0] for i in range(self.current_strategy_data[2].shape[0])])
         # print([self.cfvs_data[2][i, :, :, :, :, 0] for i in range(self.current_strategy_data[2].shape[0])])
 
@@ -256,7 +255,7 @@ class Lookahead(object):
 
     # --- Uses regret matching to generate the players' current strategies.
     # -- @local
-    def _compute_current_strategies(self):
+    def _compute_current_strategies(self, iteration):
         for d in range(2, self.depth + 1):
             self.positive_regrets_data[d].copy_(self.regrets_data[d])
             self.positive_regrets_data[d].clamp_(self.regret_epsilon, constants.max_number())
@@ -267,7 +266,11 @@ class Lookahead(object):
             # 1.1  regret matching
             # note that the regrets as well as the CFVs have switched player indexing
             self.regrets_sum[d] = torch.sum(self.positive_regrets_data[d], 0)
-            if not ((arguments.cdbr_normal_resolve and d % 2 != 0) or (not arguments.cdbr_normal_resolve and d % 2 == 0)):
+            if not arguments.cdbr:
+                self.current_strategy_data[d] = torch.div(self.positive_regrets_data[d], self.regrets_sum[d].expand_as(self.positive_regrets_data[d]))
+            elif not ((arguments.cdbr_normal_resolve and d % 2 != 0)
+                      or (not arguments.cdbr_normal_resolve and d % 2 == 0)) \
+                    or (arguments.cdbr_type == constants.CDBRType.uniform_random and iteration == 1):
                 self.current_strategy_data[d] = torch.div(self.positive_regrets_data[d], self.regrets_sum[d].expand_as(self.positive_regrets_data[d]))
 
     # --- Using the players' current strategies, computes their probabilities of

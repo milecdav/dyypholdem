@@ -24,15 +24,13 @@ def run(server, port):
             # game ended or connection to server broke
             break
 
-        print(Fore.WHITE + Style.BRIGHT + f"\nNew state >>> {repr(state)} Winnings: {hand_winnings}")
-
         if node is not None:
             # 2.2 get the player's action
             # print("Please enter your action (f/c/#):")
             if state.bet1 == state.bet2:
-                action = np.random.choice(["c", "0.5", "1", "2", "a"])
+                action = np.random.choice(["c", "1", "a"])
             else:
-                action = np.random.choice(["f", "c", "0.5", "1", "2", "a"])
+                action = np.random.choice(["f", "c", "1", "a"])
 
             if action == "f":
                 acpc_action = Action(action=constants.ACPCActions.fold)
@@ -41,7 +39,7 @@ def run(server, port):
             elif action == "a":
                 acpc_action = Action(action=constants.ACPCActions.rraise, raise_amount=20000)
             else:
-                amount = int((float(action)) * (state.bet1 + state.bet2) + state.bet1)
+                amount = int((float(action)) * 2*max(state.bet1, state.bet2) + max(state.bet1, state.bet2))
                 amount = min(amount, 20000)
                 acpc_action = Action(action=constants.ACPCActions.rraise, raise_amount=amount)
 
@@ -52,10 +50,8 @@ def run(server, port):
             winnings += hand_winnings
             hands += 1
             arguments.logger.success(f"Hand completed. Hand winnings: {hand_winnings}, Total winnings: {winnings} in hand {hands}")
-            print(Fore.GREEN + Style.BRIGHT + f"Hand completed. Hand winnings: {hand_winnings}, Total winnings: {winnings} in hand {hands}")
 
     arguments.logger.success(f"Game ended >>> Total winnings: {winnings}")
-    print(Fore.GREEN + Style.BRIGHT + f"Game ended >>> Total winnings: {winnings}")
 
 
 if __name__ == "__main__":
