@@ -4,7 +4,10 @@ A python implementation of [DeepHoldem](https://github.com/happypepper/DeepHolde
 
 It uses a cross-platform software stack based on Python and PyTorch and has most data for bucketing pre-calculated and stored in data files or an sqlite3 database. This reduces loading times significantly and DyypHoldem loads and reacts on a fairly modern system in reasonable time frames.
 
+## Changes from the original
+I fixed bugs mostly with all-in so the bot is not crashing anymore. I also added some more logs and simple stats for result anaysis.
 
+In the CDBR branch I am developing experiments for the paper https://arxiv.org/abs/2112.12594 which attempts known opponent exploitation.
 
 ## Setup
 
