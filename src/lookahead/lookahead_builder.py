@@ -356,6 +356,15 @@ class LookaheadBuilder(object):
             next_parent_id = action_id - prev_layer_terminal_actions_count
             next_gp_id = (gp_id - 1) * gp_nonallinbets_count + parent_id
 
+            if not node.terminal and node.current_player != constants.Players.Chance:
+                if (arguments.cdbr_normal_resolve and layer % 2 == 0) or (not arguments.cdbr_normal_resolve and layer % 2 != 0):
+                    for action_index in range(2):
+                        self.lookahead.current_strategy_data[layer + 1][action_index: action_index + 1, next_parent_id - 1:next_parent_id, next_gp_id - 1:next_gp_id, 0:1, :].copy_(
+                            node.strategy[action_index, :].view(1, 1, 1, 1, game_settings.hand_count))
+                    for action_index in range(len(node.children) - 2):
+                        self.lookahead.current_strategy_data[layer + 1][self.lookahead.actions_count[layer] - action_index - 1:self.lookahead.actions_count[layer] - action_index,
+                        next_parent_id - 1:next_parent_id, next_gp_id - 1:next_gp_id, 0:1, :].copy_(node.strategy[len(node.children) - action_index - 1, :].view(1, 1, 1, 1, game_settings.hand_count))
+
             if (not node.terminal) and (node.current_player != constants.Players.Chance):
                 # parent is not an allin raise
                 assert parent_id <= self.lookahead.nonallinbets_count[layer - 2]

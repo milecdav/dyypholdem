@@ -189,7 +189,7 @@ class PokerTreeBuilder(object):
         self._build_tree_dfs(root)
 
         strategy_filling = StrategyFilling()
-        strategy_filling.fill_uniform(root)
+        strategy_filling.fill_strategy(root)
 
         # uncomment to output decision tree
         # arguments.logger.trace(repr(root))

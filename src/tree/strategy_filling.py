@@ -12,20 +12,20 @@ class StrategyFilling(object):
 
     # --- Fills a public tree with a uniform strategy.
     # -- @param tree a public tree for Leduc Hold'em or variant
-    def fill_uniform(self, tree):
-        self._fill_uniform_dfs(tree)
+    def fill_strategy(self, tree):
+        self._fill_strategy_dfs(tree)
 
     # --- Fills a node with a uniform strategy and recurses on the children.
     # -- @param node the node
     # -- @local
-    def _fill_uniform_dfs(self, node):
+    def _fill_strategy_dfs(self, node):
         if node.current_player == constants.Players.Chance:
             self._fill_chance(node)
         else:
-            self._fill_uniformly(node)
+            self._fill_strategy(node)
 
         for i in range(0, len(node.children)):
-            self._fill_uniform_dfs(node.children[i])
+            self._fill_strategy_dfs(node.children[i])
 
     # --- Fills a chance node with the probability of each outcome.
     # -- @param node the chance node
@@ -47,8 +47,15 @@ class StrategyFilling(object):
     # -- @param node the player node
     # -- @local
     @staticmethod
-    def _fill_uniformly(node):
+    def _fill_strategy(node):
         assert node.current_player == constants.Players.P1 or node.current_player == constants.Players.P2
 
         if not node.terminal:
-            node.strategy = arguments.Tensor(len(node.children), game_settings.hand_count).fill_(1.0 / len(node.children))
+            node.strategy = arguments.Tensor(len(node.children), game_settings.hand_count).fill_(0.0)
+            if arguments.cdbr:
+                if arguments.cdbr_type == constants.CDBRType.uniform_random:
+                    node.strategy.fill_(1.0 / len(node.children))
+                elif arguments.cdbr_type == constants.CDBRType.always_fold:
+                    node.strategy[0, :] = 1.0
+                elif arguments.cdbr_type == constants.CDBRType.always_call:
+                    node.strategy[1, :] = 1.0

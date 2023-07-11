@@ -214,7 +214,8 @@ class Lookahead(object):
     def _compute(self):
         # 1.0 main loop
         if arguments.cdbr:
-            self._initialize_opponent_strategy()
+            if not arguments.cdbr_new_initialization:
+                self._initialize_opponent_strategy()
         for iteration in range(1, arguments.cfr_iters + 1):
             self._set_opponent_starting_range()
             self._compute_current_strategies(iteration)
@@ -270,8 +271,10 @@ class Lookahead(object):
                 self.current_strategy_data[d] = torch.div(self.positive_regrets_data[d], self.regrets_sum[d].expand_as(self.positive_regrets_data[d]))
             elif not ((arguments.cdbr_normal_resolve and d % 2 != 0)
                       or (not arguments.cdbr_normal_resolve and d % 2 == 0)) \
-                    or (arguments.cdbr_type == constants.CDBRType.uniform_random and iteration == 1):
+                    or (arguments.cdbr_type == constants.CDBRType.uniform_random and iteration == 1 and not arguments.cdbr_new_initialization):
                 self.current_strategy_data[d] = torch.div(self.positive_regrets_data[d], self.regrets_sum[d].expand_as(self.positive_regrets_data[d]))
+
+            # print(self.current_strategy_data[d][1, 0, 0, 0, :])
 
     # --- Using the players' current strategies, computes their probabilities of
     # -- reaching each state of the lookahead.
