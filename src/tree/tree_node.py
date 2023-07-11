@@ -39,7 +39,8 @@ class TreeNode:
         else:
             header = ''
             indent = "  " + "    " * (level - 1) + "|---> "
-        ret = f"{header}{indent}Type={self.type}, depth={self.depth}, street={arguments.street_names[self.street]}, player={repr(self.current_player)}, bets=({self.bets[0].item()}, {self.bets[1].item()}), pot={self.pot}\n"
+        ret = f"{header}{indent}Type={self.type}, depth={self.depth}, street={arguments.street_names[self.street]}, player={repr(self.current_player)}, bets=({self.bets[0].item()}, {self.bets[1].item()}), pot={self.pot}"
+        ret += f", actions={self.actions}, bet_sizing={self.bet_sizing}, num_bets={self.num_bets}, board_string={self.board_string}\n"
         if self.children:
             for child in self.children:
                 ret += child.__repr__(level + 1)
