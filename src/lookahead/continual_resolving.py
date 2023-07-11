@@ -4,6 +4,8 @@ import settings.arguments as arguments
 import settings.constants as constants
 import settings.game_settings as game_settings
 
+import utils.global_variables as global_variables
+
 from server.protocol_to_node import ProcessedState, Action
 import game.card_tools as card_tools
 from terminal_equity.terminal_equity import TerminalEquity
@@ -67,7 +69,11 @@ class ContinualResolving(object):
         self.hand_id = state.hand_id
 
         if arguments.cdbr:
-            arguments.cdbr_normal_resolve = self.player == constants.Players.P1
+            # this removes the possible actions from the string since we resolve the first node
+            parts = state.matchstate_string.split(':')
+            parts[3] = ""
+            global_variables.cdbr_matchstate_string = ":".join(parts)
+            global_variables.cdbr_normal_resolve = self.player == constants.Players.P1
             self.resolve_first_node()
 
     # --- Re-solves a node and chooses the re-solving player's next action.
@@ -107,10 +113,11 @@ class ContinualResolving(object):
 
         # 2.0 other nodes - we need to update the invariant
         else:
+            global_variables.cdbr_matchstate_string = state.matchstate_string
             assert not node.terminal
             assert node.current_player == self.player
 
-            arguments.cdbr_normal_resolve = True
+            global_variables.cdbr_normal_resolve = True
             arguments.logger.debug(f"Resolving current node with {arguments.cfr_iters} iterations")
 
             # 2.1 update the invariant based on actions we did not make

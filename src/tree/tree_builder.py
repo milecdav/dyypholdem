@@ -1,8 +1,11 @@
 from typing import List
+import copy
 
 import settings.arguments as arguments
 import settings.constants as constants
 import settings.game_settings as game_settings
+
+import utils.global_variables as global_variables
 
 from tree.tree_node import TreeNode, BuildTreeParams
 from tree.strategy_filling import StrategyFilling
@@ -131,7 +134,7 @@ class PokerTreeBuilder(object):
     # -- @param current_node the root to build the (sub)tree from
     # -- @return `current_node` after the (sub)tree has been built
     # -- @local
-    def _build_tree_dfs(self, current_node):
+    def _build_tree_dfs(self, current_node, actions):
 
         self._fill_additional_attributes(current_node)
         children = self._get_children_nodes(current_node)
@@ -142,14 +145,18 @@ class PokerTreeBuilder(object):
         current_node.actions = arguments.Tensor(len(children))
         for i in range(0, len(children)):
             children[i].parent = current_node
-            self._build_tree_dfs(children[i])
-            depth = max(depth, children[i].depth)
             if i == 0:
-                current_node.actions[i] = constants.Actions.fold.value
+                current_action = constants.Actions.fold.value
             elif i == 1:
-                current_node.actions[i] = constants.Actions.ccall.value
+                current_action = constants.Actions.ccall.value
             else:
-                current_node.actions[i] = children[i].bets.max()
+                current_action = children[i].bets.max().item()
+
+            current_node.actions[i] = current_action
+            actions_copy = copy.deepcopy(actions)
+            actions_copy.append(current_action)
+            self._build_tree_dfs(children[i], actions_copy)
+            depth = max(depth, children[i].depth)
 
         current_node.depth = depth + 1
 
@@ -186,7 +193,10 @@ class PokerTreeBuilder(object):
         self.bet_sizing = root.bet_sizing
         self.limit_to_street = build_tree_params.limit_to_street
 
-        self._build_tree_dfs(root)
+        print(global_variables.cdbr_matchstate_string)
+        global_variables.cdbr_query_strings = []
+
+        self._build_tree_dfs(root, [])
 
         strategy_filling = StrategyFilling()
         strategy_filling.fill_strategy(root)

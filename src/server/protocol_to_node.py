@@ -19,6 +19,7 @@ class ParsedState(object):
     board: str = ""
     hand_p1: str = ""
     hand_p2: str = ""
+    matchstate: str = ""
 
 
 @dataclass
@@ -37,6 +38,7 @@ class ProcessedState(object):
     acting_player: constants.Players = constants.Players.Chance
     bet1: int = 0
     bet2: int = 0
+    matchstate_string: str = ""
 
     def __repr__(self):
         line_1 = f"{arguments.street_names[self.current_street]} - Position: {self.position} / {repr(self.player)} - Pocket cards: {self.my_hand_string} - Board: {self.board} - "
@@ -202,6 +204,7 @@ def _parse_state(state):
     out.board = f"{flop.strip()}{turn.strip()}{river.strip()}"
     out.hand_p1 = hand_p1.strip()
     out.hand_p2 = hand_p2.strip()
+    out.matchstate = state
 
     return out
 
@@ -251,6 +254,7 @@ def _process_parsed_state(parsed_state) -> ProcessedState:
     out.all_actions = all_actions
     out.board = board
     out.hand_number = parsed_state.hand_id
+    out.matchstate_string = parsed_state.matchstate
 
     if out.position == constants.Players.P1.value:
         out.my_hand_string = parsed_state.hand_p1

@@ -6,6 +6,8 @@ import settings.arguments as arguments
 import settings.game_settings as game_settings
 import settings.constants as constants
 
+import utils.global_variables as global_variables
+
 from terminal_equity.terminal_equity import TerminalEquity
 from lookahead.lookahead_builder import LookaheadBuilder
 from lookahead.resolve_results import ResolveResults
@@ -235,7 +237,7 @@ class Lookahead(object):
 
     def _initialize_opponent_strategy(self):
         for d in range(2, self.depth + 1):
-            if (arguments.cdbr_normal_resolve and d % 2 != 0) or (not arguments.cdbr_normal_resolve and d % 2 == 0):
+            if (global_variables.cdbr_normal_resolve and d % 2 != 0) or (not global_variables.cdbr_normal_resolve and d % 2 == 0):
                 if arguments.cdbr_type == constants.CDBRType.always_fold:
                     self.current_strategy_data[d][0, :, :, :, :] = 1.
                 elif arguments.cdbr_type == constants.CDBRType.always_call:
@@ -269,8 +271,8 @@ class Lookahead(object):
             self.regrets_sum[d] = torch.sum(self.positive_regrets_data[d], 0)
             if not arguments.cdbr:
                 self.current_strategy_data[d] = torch.div(self.positive_regrets_data[d], self.regrets_sum[d].expand_as(self.positive_regrets_data[d]))
-            elif not ((arguments.cdbr_normal_resolve and d % 2 != 0)
-                      or (not arguments.cdbr_normal_resolve and d % 2 == 0)) \
+            elif not ((global_variables.cdbr_normal_resolve and d % 2 != 0)
+                      or (not global_variables.cdbr_normal_resolve and d % 2 == 0)) \
                     or (arguments.cdbr_type == constants.CDBRType.uniform_random and iteration == 1 and not arguments.cdbr_new_initialization):
                 self.current_strategy_data[d] = torch.div(self.positive_regrets_data[d], self.regrets_sum[d].expand_as(self.positive_regrets_data[d]))
 

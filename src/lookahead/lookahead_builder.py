@@ -2,6 +2,8 @@ import settings.arguments as arguments
 import settings.game_settings as game_settings
 import settings.constants as constants
 
+import utils.global_variables as global_variables
+
 from tree.tree_node import TreeNode
 from nn.value_nn import ValueNn
 from nn.next_round_value import NextRoundValue
@@ -357,7 +359,7 @@ class LookaheadBuilder(object):
             next_gp_id = (gp_id - 1) * gp_nonallinbets_count + parent_id
 
             if not node.terminal and node.current_player != constants.Players.Chance:
-                if (arguments.cdbr_normal_resolve and layer % 2 == 0) or (not arguments.cdbr_normal_resolve and layer % 2 != 0):
+                if (global_variables.cdbr_normal_resolve and layer % 2 == 0) or (not global_variables.cdbr_normal_resolve and layer % 2 != 0):
                     for action_index in range(2):
                         self.lookahead.current_strategy_data[layer + 1][action_index: action_index + 1, next_parent_id - 1:next_parent_id, next_gp_id - 1:next_gp_id, 0:1, :].copy_(
                             node.strategy[action_index, :].view(1, 1, 1, 1, game_settings.hand_count))

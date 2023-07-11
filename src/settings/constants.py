@@ -61,6 +61,7 @@ class CDBRType(Enum):
     always_fold = "always_fold"
     always_call = "always_call"
     uniform_random = "uniform_random"
+    slumbot = "slumbot"
 
 
 # --- An arbitrarily large number used for clamping regrets.
