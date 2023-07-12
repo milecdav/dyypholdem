@@ -134,7 +134,27 @@ class PokerTreeBuilder(object):
     # -- @param current_node the root to build the (sub)tree from
     # -- @return `current_node` after the (sub)tree has been built
     # -- @local
+    @staticmethod
+    def put_matchstate_string_to_query(actions):
+        parts = global_variables.cdbr_matchstate_string.split(":")
+        parts[1] = "0" if parts[1] == "1" else "1"
+        for action in actions:
+            if action == constants.Actions.fold.value:
+                parts[3] += "f"
+            elif action == constants.Actions.ccall.value:
+                parts[3] += "c"
+            else:
+                parts[3] += "b" + str(int(action))
+        card_parts = parts[4].split("/")
+        hands = card_parts[0].split("|")
+        card_parts[0] = hands[1] + "|" + hands[0]
+        parts[4] = "/".join(card_parts)
+        global_variables.cdbr_query_strings.append(":".join(parts))
+
     def _build_tree_dfs(self, current_node, actions):
+
+        if not current_node.terminal and current_node.current_player != global_variables.cdbr_player and current_node.current_player != constants.Players.Chance:
+            self.put_matchstate_string_to_query(actions)
 
         self._fill_additional_attributes(current_node)
         children = self._get_children_nodes(current_node)

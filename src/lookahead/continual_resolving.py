@@ -70,6 +70,7 @@ class ContinualResolving(object):
 
         if arguments.cdbr:
             # this removes the possible actions from the string since we resolve the first node
+            global_variables.cdbr_player = state.player
             parts = state.matchstate_string.split(':')
             parts[3] = ""
             global_variables.cdbr_matchstate_string = ":".join(parts)
