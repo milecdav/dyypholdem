@@ -46,7 +46,7 @@ class BetSizing(object):
         else:
             # iterate through all bets and check if they are possible
             fractions = []
-            if np.sum(node.bets.numpy()) == 150 and node.id == 0:
+            if np.sum(node.bets.cpu().numpy()) == 150 and node.id == 0:
                 fractions = self.pot_fractions[2]
             elif node.street == 1:
                 fractions = self.pot_fractions[0]

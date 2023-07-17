@@ -92,7 +92,7 @@ class StrategyFilling(object):
                             node.strategy.fill_(1.0 / len(node.children))
                         else:
                             action_to_index = {}
-                            for index, action in enumerate(node.actions.numpy()):
+                            for index, action in enumerate(node.actions.cpu().numpy()):
                                 action = int(action)
                                 action_to_index[action] = index                            
                             # print(action_to_index)
