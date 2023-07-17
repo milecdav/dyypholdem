@@ -5,11 +5,13 @@ import torch
 import settings.arguments as arguments
 import settings.constants as constants
 
-from game.bet_sizing import BetSizing
+import utils.global_variables as global_variables
 
+from game.bet_sizing import BetSizing
 
 @dataclass
 class TreeNode:
+    id: int = 0
     depth: int = 0
     street: int = 0
     board: arguments.Tensor = None

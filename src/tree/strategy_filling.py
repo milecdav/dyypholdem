@@ -2,6 +2,8 @@ import settings.arguments as arguments
 import settings.constants as constants
 import settings.game_settings as game_settings
 
+import utils.global_variables as global_variables
+
 import game.card_tools as card_tools
 
 
@@ -47,7 +49,31 @@ class StrategyFilling(object):
     # -- @param node the player node
     # -- @local
     @staticmethod
-    def _fill_strategy(node):
+    def convert_action(action):
+        if action == "f":
+            return -2
+        if action == "c":
+            return -1
+        if action.startswith("b"):
+            action = int(action.strip("b"))
+            return action + global_variables.cdbr_state.prev_pot
+        assert False, "Wrong action"
+
+    @staticmethod
+    def action_to_closest_index(action_to_index, action):
+        if action in action_to_index:
+            return action_to_index[action]
+        dist = 20000
+        best_key = -3        
+        for key in action_to_index:
+            if abs(key - action) < dist:
+                best_key = key
+                dist = abs(key - action)
+        return action_to_index[best_key]
+        
+
+        
+    def _fill_strategy(self, node):
         assert node.current_player == constants.Players.P1 or node.current_player == constants.Players.P2
 
         if not node.terminal:
@@ -59,3 +85,17 @@ class StrategyFilling(object):
                     node.strategy[0, :] = 1.0
                 elif arguments.cdbr_type == constants.CDBRType.always_call:
                     node.strategy[1, :] = 1.0
+                elif arguments.cdbr_type == constants.CDBRType.slumbot:
+                    if node.id in global_variables.cdbr_node_to_index:
+                        results = global_variables.cdbr_query_results[global_variables.cdbr_node_to_index[node.id]]
+                        if results[0] == "e":
+                            node.strategy.fill_(1.0 / len(node.children))
+                        else:
+                            action_to_index = {}
+                            for index, action in enumerate(node.actions.numpy()):
+                                action = int(action)
+                                action_to_index[action] = index                            
+                            # print(action_to_index)
+                            # print(global_variables.cdbr_query_strings[global_variables.cdbr_node_to_index[node.id]])
+                            for i, value in enumerate([self.action_to_closest_index(action_to_index, self.convert_action(a)) for a in results]):
+                                node.strategy[value, i] = 1.0

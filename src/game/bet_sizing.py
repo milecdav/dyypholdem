@@ -1,5 +1,6 @@
 
 import torch
+import numpy as np
 
 import settings.arguments as arguments
 import settings.game_settings as game_settings
@@ -45,12 +46,12 @@ class BetSizing(object):
         else:
             # iterate through all bets and check if they are possible
             fractions = []
-            if node.num_bets == 0:
-                fractions = self.pot_fractions[0]
-            elif node.num_bets == 1:
-                fractions = self.pot_fractions[1]
-            else:
+            if np.sum(node.bets.numpy()) == 150 and node.id == 0:
                 fractions = self.pot_fractions[2]
+            elif node.street == 1:
+                fractions = self.pot_fractions[0]
+            else:
+                fractions = self.pot_fractions[3]
 
             max_possible_bets_count = len(fractions) + 1    # we can always go allin
             out = arguments.Tensor(max_possible_bets_count, 2).fill_(opponent_bet)

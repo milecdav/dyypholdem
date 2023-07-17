@@ -24,5 +24,5 @@ big_blind = 100
 stack = 20000
 # list of pot-scaled bet sizes to use in tree
 # orig: bet_sizing = [[1], [1], [1]]
-bet_sizing = [[1], [0.5], [1]]
+bet_sizing = [[1], [1], [0.5], [1]]
 

@@ -1,15 +1,22 @@
 import os
 import sys
-from lookahead.continual_resolving import ContinualResolving
-import settings.constants as constants
 
 sys.path.append(os.getcwd())
+
+from lookahead.continual_resolving import ContinualResolving
+import settings.constants as constants
 
 last_state = None
 last_node = None
 continual_resolving = ContinualResolving()
 
 game_hands = [
+    [
+        {'old_action': '', 'action': '', 'client_pos': 1, 'hole_cards': ['Ac', 'Td'], 'board': []},
+        {'old_action': '', 'action': 'ck/k', 'client_pos': 1, 'hole_cards': ['Ac', 'Td'], 'board': ['As', 'Kh', '2d']},
+        {'old_action': 'ck/k', 'action': 'ck/kk/k', 'client_pos': 1, 'hole_cards': ['Ac', 'Td'], 'board': ['As', 'Kh', '2d', 'Qd']},
+        {'old_action': 'ck/kk/k', 'action': 'ck/kk/kk/k', 'client_pos': 1, 'hole_cards': ['Ac', 'Td'], 'board': ['As', 'Kh', '2d', 'Qd', '4d']},
+    ],
     [
         {'old_action': '', 'action': 'b200', 'client_pos': 0, 'hole_cards': ['7d', '7c'], 'board': []},
         {'old_action': 'b200', 'action': 'b200b600b1800', 'client_pos': 0, 'hole_cards': ['7d', '7c'], 'board': []},
@@ -19,6 +26,10 @@ game_hands = [
         {'old_action': 'b200b600b1800c/kb1800c/', 'action': 'b200b600b1800c/kb1800c/kb3600', 'client_pos': 0, 'hole_cards': ['7d', '7c'], 'board': ['Qd', '3s', '2s', '7s']},
         {'old_action': 'b200b600b1800c/kb1800c/kb3600', 'action': 'b200b600b1800c/kb1800c/kb3600c/', 'client_pos': 0, 'hole_cards': ['7d', '7c'], 'board': ['Qd', '3s', '2s', '7s', 'Th']},
         {'old_action': 'b200b600b1800c/kb1800c/kb3600c/', 'action': 'b200b600b1800c/kb1800c/kb3600c/kb7200', 'client_pos': 0, 'hole_cards': ['7d', '7c'], 'board': ['Qd', '3s', '2s', '7s', 'Th']},
+    ],
+    [
+        {'old_action': '', 'action': '', 'client_pos': 1, 'hole_cards': ['Ks', '9d'], 'board': []},
+        {'old_action': '', 'action': 'ck/b100', 'client_pos': 1, 'hole_cards': ['Ks', '9d'], 'board': ['4s', '4d', '2c']}
     ],
     [
         {'old_action': '', 'action': 'b200', 'client_pos': 0, 'hole_cards': ['Ac', '5c'], 'board': []},
@@ -62,7 +73,10 @@ def run(msg):
     # parse the state message
     current_state, current_node, winnings = get_state(msg)
 
-    if msg.get('old_action') == "":
+    if last_state is None or last_state.hand_number != current_state.hand_number or current_node.street < last_node.street:
+        arguments.logger.trace("Starting new hand")
+        del last_node
+        del last_state
         continual_resolving.start_new_hand(current_state)
 
     # do we have a new hand?

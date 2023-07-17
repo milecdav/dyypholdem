@@ -6,7 +6,7 @@ import settings.game_settings as game_settings
 
 import utils.global_variables as global_variables
 
-from server.protocol_to_node import ProcessedState, Action
+from server.protocol_to_node import ProcessedState, Action, get_prev_pot
 import game.card_tools as card_tools
 from terminal_equity.terminal_equity import TerminalEquity
 from lookahead.resolving import Resolving
@@ -70,10 +70,9 @@ class ContinualResolving(object):
 
         if arguments.cdbr:
             # this removes the possible actions from the string since we resolve the first node
-            global_variables.cdbr_player = state.player
-            parts = state.matchstate_string.split(':')
-            parts[3] = ""
-            global_variables.cdbr_matchstate_string = ":".join(parts)
+            global_variables.cdbr_player = state.player            
+            global_variables.cdbr_state = state
+            global_variables.cdbr_state.prev_pot = get_prev_pot(state)
             global_variables.cdbr_normal_resolve = self.player == constants.Players.P1
             self.resolve_first_node()
 
@@ -104,17 +103,18 @@ class ContinualResolving(object):
     # -- @param state the game state where the re-solving player is to act
     # -- (a table of the type returned by @{protocol_to_node.parse_state})
     # -- @local
-    def _resolve_node(self, state, node):
+    def _resolve_node(self, state, node):        
         # 1.0 first node and P1 position
         # no need to update an invariant since this is the very first situation
-        if self.decision_id == 0 and self.player == constants.Players.P1:
+        if self.decision_id == 0 and self.player == constants.Players.P1:            
             # the strategy computation for the first decision node has been already set up
             self.current_player_range = self.starting_player_range.clone()
             self.resolving = self.first_node_resolving
 
         # 2.0 other nodes - we need to update the invariant
         else:
-            global_variables.cdbr_matchstate_string = state.matchstate_string
+            global_variables.cdbr_state = state
+            global_variables.cdbr_state.prev_pot = get_prev_pot(state)
             assert not node.terminal
             assert node.current_player == self.player
 

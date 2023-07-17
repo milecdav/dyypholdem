@@ -1,9 +1,12 @@
 from typing import List
 import copy
+import numpy as np
 
 import settings.arguments as arguments
 import settings.constants as constants
 import settings.game_settings as game_settings
+
+import server.slumbot_query as slumbot_query
 
 import utils.global_variables as global_variables
 
@@ -52,7 +55,8 @@ class PokerTreeBuilder(object):
         fold_node = TreeNode()
         fold_node.type = constants.NodeTypes.terminal_fold
         fold_node.terminal = True
-        fold_node.current_player = constants.Players(1 - parent_node.current_player.value)
+        fold_node.current_player = constants.Players(
+            1 - parent_node.current_player.value)
         fold_node.street = parent_node.street
         fold_node.board = parent_node.board
         fold_node.board_string = parent_node.board_string
@@ -66,7 +70,8 @@ class PokerTreeBuilder(object):
             check_node = TreeNode()
             check_node.type = constants.NodeTypes.inner_check
             check_node.terminal = False
-            check_node.current_player = constants.Players(1 - parent_node.current_player.value)
+            check_node.current_player = constants.Players(
+                1 - parent_node.current_player.value)
             check_node.street = parent_node.street
             check_node.board = parent_node.board
             check_node.board_string = parent_node.board_string
@@ -90,7 +95,8 @@ class PokerTreeBuilder(object):
             terminal_call_node = TreeNode()
             terminal_call_node.type = constants.NodeTypes.terminal_call
             terminal_call_node.terminal = True
-            terminal_call_node.current_player = constants.Players(1 - parent_node.current_player.value)
+            terminal_call_node.current_player = constants.Players(
+                1 - parent_node.current_player.value)
             terminal_call_node.street = parent_node.street
             terminal_call_node.board = parent_node.board
             terminal_call_node.board_string = parent_node.board_string
@@ -105,7 +111,8 @@ class PokerTreeBuilder(object):
                 bet_node = TreeNode()
                 bet_node.parent = parent_node
                 bet_node.type = constants.NodeTypes.inner_raise
-                bet_node.current_player = constants.Players(1 - parent_node.current_player.value)
+                bet_node.current_player = constants.Players(
+                    1 - parent_node.current_player.value)
                 bet_node.street = parent_node.street
                 bet_node.board = parent_node.board
                 bet_node.board_string = parent_node.board_string
@@ -134,27 +141,53 @@ class PokerTreeBuilder(object):
     # -- @param current_node the root to build the (sub)tree from
     # -- @return `current_node` after the (sub)tree has been built
     # -- @local
-    @staticmethod
-    def put_matchstate_string_to_query(actions):
-        parts = global_variables.cdbr_matchstate_string.split(":")
+    def put_matchstate_string_to_query(self, actions):
+        state = global_variables.cdbr_state
+        prev_pot = state.prev_pot        
+        matchstate_string = state.matchstate_string
+        parts = matchstate_string.split(":")
         parts[1] = "0" if parts[1] == "1" else "1"
-        for action in actions:
-            if action == constants.Actions.fold.value:
+        parts[3] = ""        
+        if global_variables.cdbr_normal_resolve:                    
+            current_pot = 0
+            for street in range(state.current_street):                
+                immediate_pot = 100
+                for action in state.actions[street]:
+                    if action.action == constants.ACPCActions.ccall:                        
+                        parts[3] += "c"
+                    elif action.action == constants.ACPCActions.rraise:
+                        parts[3] += "b" + str(action.raise_amount - current_pot)
+                        immediate_pot = action.raise_amount
+                    else:
+                        assert False, "We should not be in terminal node"
+                current_pot = max(immediate_pot, current_pot)
+                if street != state.current_street - 1:
+                    parts[3] += "/"
+        for action in actions:            
+            if action == constants.Actions.fold.value:                
                 parts[3] += "f"
-            elif action == constants.Actions.ccall.value:
+            elif action == constants.Actions.ccall.value:                
                 parts[3] += "c"
-            else:
-                parts[3] += "b" + str(int(action))
+            else:                
+                parts[3] += "b" + str(int(action - prev_pot))
+        parts[3] = parts[3].replace("cc", "ck")
+        parts[3] = parts[3].replace("/c", "/k")
         card_parts = parts[4].split("/")
         hands = card_parts[0].split("|")
         card_parts[0] = hands[1] + "|" + hands[0]
         parts[4] = "/".join(card_parts)
         global_variables.cdbr_query_strings.append(":".join(parts))
 
-    def _build_tree_dfs(self, current_node, actions):
+    def _build_tree_dfs(self, current_node, actions):      
 
-        if not current_node.terminal and current_node.current_player != global_variables.cdbr_player and current_node.current_player != constants.Players.Chance:
-            self.put_matchstate_string_to_query(actions)
+        current_node.id = global_variables.max_id
+        global_variables.max_id += 1        
+
+        if arguments.cdbr_type == constants.CDBRType.slumbot:
+            if not current_node.terminal and current_node.current_player != global_variables.cdbr_player and current_node.current_player != constants.Players.Chance:
+                self.put_matchstate_string_to_query(actions)
+                global_variables.cdbr_node_to_index[current_node.id] = len(
+                    global_variables.cdbr_query_strings) - 1
 
         self._fill_additional_attributes(current_node)
         children = self._get_children_nodes(current_node)
@@ -208,15 +241,25 @@ class PokerTreeBuilder(object):
         root.num_bets = build_tree_params.root_node.num_bets
         root.type = constants.NodeTypes.root_node
 
-        root.bet_sizing = build_tree_params.bet_sizing or BetSizing(game_settings.bet_sizing)
+        root.bet_sizing = build_tree_params.bet_sizing or BetSizing(
+            game_settings.bet_sizing)
         assert root.bet_sizing, "no bet sizes defined"
         self.bet_sizing = root.bet_sizing
         self.limit_to_street = build_tree_params.limit_to_street
+        if arguments.cdbr_type == constants.CDBRType.slumbot:
+            global_variables.cdbr_query_strings = []
+            global_variables.cdbr_node_to_index = {}
 
-        print(global_variables.cdbr_matchstate_string)
-        global_variables.cdbr_query_strings = []
+        global_variables.max_id = 0
 
         self._build_tree_dfs(root, [])
+
+        # print(global_variables.cdbr_state.matchstate_string)
+
+        # print(global_variables.cdbr_query_strings)
+
+        global_variables.cdbr_query_results = slumbot_query.get_strategy_from_slumbot(global_variables.cdbr_query_strings)
+        
 
         strategy_filling = StrategyFilling()
         strategy_filling.fill_strategy(root)

@@ -86,7 +86,7 @@ def play_slumbot(num_hands):
             log_line(f"{hand} {hand_winnings} {winnings}", args.log)
         if hand_failed:
             failed += 1
-            arguments.logger.error(f"Bot crashed. Game was completed as always fold.")
+            arguments.logger.error(f"Bot crashed. Game was completed as always fold. Crashes so far {failed}")
         arguments.logger.success(f"Hand completed. Hand winnings: {hand_winnings}, Total winnings: {winnings} in hand {hand}")
 
     arguments.logger.success(f"Game ended >>> Total winnings: {winnings}")

@@ -39,6 +39,7 @@ class ProcessedState(object):
     bet1: int = 0
     bet2: int = 0
     matchstate_string: str = ""
+    prev_pot: int = 0
 
     def __repr__(self):
         line_1 = f"{arguments.street_names[self.current_street]} - Position: {self.position} / {repr(self.player)} - Pocket cards: {self.my_hand_string} - Board: {self.board} - "
@@ -135,6 +136,15 @@ def action_to_message(last_message, advised_action):
     out = f"{out}:{protocol_action}"
     return out
 
+# returns a pot that was in the previous street
+def get_prev_pot(state):
+    if state.current_street == 1:
+        return 0
+    for prev_street in range(state.current_street - 2, -1, -1):
+        for action in reversed(state.actions[prev_street]):
+            if action.action == constants.ACPCActions.rraise:
+                return action.raise_amount
+    return 100
 
 # --- Converts an action taken by DyypHoldem into a string representation.
 # -- @param adviced_action the action that DyypHoldem chooses to take, with fields
