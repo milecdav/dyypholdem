@@ -24,8 +24,8 @@ def query_the_strategy(args):
 
 
 def parse_results(results):
-    assert results.stderr.decode(
-        "utf-8") == "", f"There is some error output from the C++ strategy query: {results.stderr}"
+    if results.stderr.decode(results.stderr.decode("utf-8")) != "":
+        print(f"There is some error output from the C++ strategy query: {results.stderr}")
     parts = results.stdout.decode("utf-8").split()
     all_results = []
     for part in parts:
