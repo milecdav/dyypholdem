@@ -64,15 +64,13 @@ class StrategyFilling(object):
         if action in action_to_index:
             return action_to_index[action]
         dist = 20000
-        best_key = -3        
+        best_key = -3
         for key in action_to_index:
             if abs(key - action) < dist:
                 best_key = key
                 dist = abs(key - action)
         return action_to_index[best_key]
-        
 
-        
     def _fill_strategy(self, node):
         assert node.current_player == constants.Players.P1 or node.current_player == constants.Players.P2
 
@@ -94,8 +92,8 @@ class StrategyFilling(object):
                             action_to_index = {}
                             for index, action in enumerate(node.actions.cpu().numpy()):
                                 action = int(action)
-                                action_to_index[action] = index                            
-                            # print(action_to_index)
+                                action_to_index[action] = index
+                                # print(action_to_index)
                             # print(global_variables.cdbr_query_strings[global_variables.cdbr_node_to_index[node.id]])
                             for i, value in enumerate([self.action_to_closest_index(action_to_index, self.convert_action(a)) for a in results]):
                                 node.strategy[value, i] = 1.0
