@@ -89,7 +89,7 @@ class StrategyFilling(object):
                     if node.id in global_variables.cdbr_node_to_index:
                         results = global_variables.cdbr_query_results[global_variables.cdbr_node_to_index[node.id]]
                         if results[0] == "e":
-                            node.strategy.fill_(1.0 / len(node.children))
+                            node.strategy[1, :] = 1.0
                         else:
                             action_to_index = {}
                             for index, action in enumerate(node.actions.cpu().numpy()):
