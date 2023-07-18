@@ -106,10 +106,6 @@ else:
 
 # a global timer used to measure loading and calculation times
 
-"""Section slumbot connection"""
-slumbot_username = "cvut"
-slumbot_password = "miracleflop"
-
 """CDBR Section"""
 cdbr = True
 cdbr_type = CDBRType.slumbot
