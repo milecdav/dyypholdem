@@ -183,7 +183,7 @@ class PokerTreeBuilder(object):
         current_node.id = global_variables.max_id
         global_variables.max_id += 1        
 
-        if arguments.cdbr_type == constants.CDBRType.slumbot:
+        if arguments.cdbr and arguments.cdbr_type == constants.CDBRType.slumbot:
             if not current_node.terminal and current_node.current_player != global_variables.cdbr_player and current_node.current_player != constants.Players.Chance:
                 self.put_matchstate_string_to_query(actions)
                 global_variables.cdbr_node_to_index[current_node.id] = len(
@@ -246,7 +246,7 @@ class PokerTreeBuilder(object):
         assert root.bet_sizing, "no bet sizes defined"
         self.bet_sizing = root.bet_sizing
         self.limit_to_street = build_tree_params.limit_to_street
-        if arguments.cdbr_type == constants.CDBRType.slumbot:
+        if arguments.cdbr and arguments.cdbr_type == constants.CDBRType.slumbot:
             global_variables.cdbr_query_strings = []
             global_variables.cdbr_node_to_index = {}
 
@@ -257,9 +257,8 @@ class PokerTreeBuilder(object):
         # print(global_variables.cdbr_state.matchstate_string)
 
         # print(global_variables.cdbr_query_strings)
-
-        global_variables.cdbr_query_results = slumbot_query.get_strategy_from_slumbot(global_variables.cdbr_query_strings)
-        
+        if arguments.cdbr and arguments.cdbr_type == constants.CDBRType.slumbot:
+            global_variables.cdbr_query_results = slumbot_query.get_strategy_from_slumbot(global_variables.cdbr_query_strings)
 
         strategy_filling = StrategyFilling()
         strategy_filling.fill_strategy(root)
