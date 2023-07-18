@@ -358,7 +358,7 @@ class LookaheadBuilder(object):
             next_parent_id = action_id - prev_layer_terminal_actions_count
             next_gp_id = (gp_id - 1) * gp_nonallinbets_count + parent_id
 
-            if not node.terminal and node.current_player != constants.Players.Chance:
+            if arguments.cdbr and arguments.cdbr_new_initialization and not node.terminal and node.current_player != constants.Players.Chance:
                 if (global_variables.cdbr_normal_resolve and layer % 2 == 0) or (not global_variables.cdbr_normal_resolve and layer % 2 != 0):
                     for action_index in range(2):
                         self.lookahead.current_strategy_data[layer + 1][action_index: action_index + 1, next_parent_id - 1:next_parent_id, next_gp_id - 1:next_gp_id, 0:1, :].copy_(
