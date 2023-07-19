@@ -214,7 +214,7 @@ def _parse_state(state):
     out.board = f"{flop.strip()}{turn.strip()}{river.strip()}"
     out.hand_p1 = hand_p1.strip()
     out.hand_p2 = hand_p2.strip()
-    out.matchstate = state
+    out.matchstate = state.strip()
 
     return out
 
@@ -286,6 +286,8 @@ def _process_parsed_state(parsed_state) -> ProcessedState:
     out.acting_player = acting_player
 
     arguments.logger.trace(f"Acting Player: {repr(out.acting_player)}, Computed bets: {bets[0]}, {bets[1]}, Bets: {bets}")
+
+    out.prev_pot = get_prev_pot(out)
 
     return out
 
