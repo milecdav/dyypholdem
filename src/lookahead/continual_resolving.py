@@ -6,7 +6,7 @@ import settings.game_settings as game_settings
 
 import utils.global_variables as global_variables
 
-from server.protocol_to_node import ProcessedState, Action, get_prev_pot
+from server.protocol_to_node import ProcessedState, Action
 import game.card_tools as card_tools
 from terminal_equity.terminal_equity import TerminalEquity
 from lookahead.resolving import Resolving
@@ -72,7 +72,6 @@ class ContinualResolving(object):
             # this removes the possible actions from the string since we resolve the first node
             global_variables.cdbr_player = state.player            
             global_variables.cdbr_state = state
-            global_variables.cdbr_state.prev_pot = get_prev_pot(state)
             global_variables.cdbr_normal_resolve = self.player == constants.Players.P1
             self.resolve_first_node()
 
@@ -114,7 +113,6 @@ class ContinualResolving(object):
         # 2.0 other nodes - we need to update the invariant
         else:
             global_variables.cdbr_state = state
-            global_variables.cdbr_state.prev_pot = get_prev_pot(state)
             assert not node.terminal
             assert node.current_player == self.player
 
