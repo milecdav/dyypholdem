@@ -60,8 +60,6 @@ if __name__ == "__main__":
     parser.add_argument('port', type=int, help="Port to connect on the ACPC server")
     args = parser.parse_args()
 
-    from colorama import Fore, Style
-
     import settings.arguments as arguments
     import settings.constants as constants
 
