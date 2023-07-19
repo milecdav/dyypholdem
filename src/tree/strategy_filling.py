@@ -87,6 +87,7 @@ class StrategyFilling(object):
                     if node.id in global_variables.cdbr_node_to_index:
                         results = global_variables.cdbr_query_results[global_variables.cdbr_node_to_index[node.id]]
                         if results[0] == "e":
+                            arguments.logger.trace(f"Error from query for matchstate {global_variables.cdbr_query_strings[global_variables.cdbr_node_to_index[node.id]]}")
                             node.strategy[1, :] = 1.0
                         else:
                             action_to_index = {}
