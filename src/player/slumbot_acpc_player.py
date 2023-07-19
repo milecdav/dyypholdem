@@ -9,16 +9,15 @@ sys.path.append(os.getcwd())
 import server.slumbot_query as slumbot_query
 
 
-
-def get_matchstate_string(state):     
+def get_matchstate_string(state):
     matchstate_string = state.matchstate_string.strip()
-    parts = matchstate_string.split(":")    
-    parts[3] = ""                          
+    parts = matchstate_string.split(":")
+    parts[3] = ""
     current_pot = 0
-    for street in range(state.current_street):                
+    for street in range(state.current_street):
         immediate_pot = 100
         for action in state.actions[street]:
-            if action.action == constants.ACPCActions.ccall:                        
+            if action.action == constants.ACPCActions.ccall:
                 parts[3] += "c"
             elif action.action == constants.ACPCActions.rraise:
                 parts[3] += "b" + str(action.raise_amount - current_pot)
@@ -29,7 +28,7 @@ def get_matchstate_string(state):
         if street != state.current_street - 1:
             parts[3] += "/"
     parts[3] = parts[3].replace("cc", "ck")
-    parts[3] = parts[3].replace("/c", "/k")    
+    parts[3] = parts[3].replace("/c", "/k")
     return ":".join(parts)
 
 
@@ -60,12 +59,12 @@ def run(server, port):
 
             if action.startswith("b"):
                 action = int(action.strip("b")) + state.prev_pot
-            
+
             if action == "f":
                 acpc_action = Action(action=constants.ACPCActions.fold)
             elif action == "c":
                 acpc_action = Action(action=constants.ACPCActions.ccall, raise_amount=abs(state.bet1 - state.bet2))
-            else:                
+            else:
                 acpc_action = Action(action=constants.ACPCActions.rraise, raise_amount=action)
 
             # 2.3 send the action to the dealer
