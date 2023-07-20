@@ -211,6 +211,20 @@ class Lookahead(object):
 
         return out
 
+    def print_strategy(self):
+        self._print_strategy_in_node(self.tree, 1)
+
+    def _print_strategy_in_node(self, node: TreeNode, depth: int):
+        if node.terminal:
+            return
+        if node.current_player == constants.Players.Chance:
+            return
+        else:
+            lookahead_coordinates = node.lookahead_coordinates
+            print("Coordinates of children")
+            for child in node.children:
+                print(child.lookahead_coordinates)
+
     # --- Re-solves the lookahead.
     # -- @local
     def _compute(self):
@@ -227,6 +241,7 @@ class Lookahead(object):
             self._compute_cfvs()
             self._compute_regrets()
             self._compute_cumulate_average_cfvs(iteration)
+            self.print_strategy()
         # print([self.average_strategies_data[2][i, :, :, :, 0] for i in range(self.current_strategy_data[2].shape[0])])
         # print([self.cfvs_data[2][i, :, :, :, :, 0] for i in range(self.current_strategy_data[2].shape[0])])
 
