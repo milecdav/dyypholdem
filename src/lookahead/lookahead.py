@@ -214,6 +214,11 @@ class Lookahead(object):
     def print_strategy(self):
         self._print_strategy_in_node(self.tree, 1)
 
+    @staticmethod
+    def print_spaces(num_spaces):
+        for _ in range(num_spaces):
+            print(" ", end="")
+
     def _print_strategy_in_node(self, node: TreeNode, depth: int):
         if node.terminal:
             return
@@ -221,9 +226,16 @@ class Lookahead(object):
             return
         else:
             lookahead_coordinates = node.lookahead_coordinates
-            print("Coordinates of children")
+            self.print_spaces(depth)
+            print(f"Strategy in depth {depth} with bets {node.bets}")
             for child in node.children:
-                print(child.lookahead_coordinates)
+                self.print_spaces(depth)         
+                lc = child.lookahead_coordinates.cpu().numpy()
+                for action_prob in self.current_strategy_data[depth + 1][int(lc[0])-1, int(lc[1])-1, int(lc[2])-1, 0, :].cpu().numpy()[0:1]:
+                    print(action_prob, end=",")
+                print()
+            for child in node.children:
+                self._print_strategy_in_node(child, depth + 1)
 
     # --- Re-solves the lookahead.
     # -- @local
@@ -232,6 +244,7 @@ class Lookahead(object):
         if arguments.cdbr:
             if not arguments.cdbr_new_initialization:
                 self._initialize_opponent_strategy()
+        self.print_strategy()
         for iteration in range(1, arguments.cfr_iters + 1):
             self._set_opponent_starting_range()
             self._compute_current_strategies(iteration)
@@ -241,7 +254,7 @@ class Lookahead(object):
             self._compute_cfvs()
             self._compute_regrets()
             self._compute_cumulate_average_cfvs(iteration)
-            self.print_strategy()
+        self.print_strategy()
         # print([self.average_strategies_data[2][i, :, :, :, 0] for i in range(self.current_strategy_data[2].shape[0])])
         # print([self.cfvs_data[2][i, :, :, :, :, 0] for i in range(self.current_strategy_data[2].shape[0])])
 
