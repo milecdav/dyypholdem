@@ -69,8 +69,13 @@ class LookaheadBuilder(object):
                 self.lookahead.ranges_data[d].fill_(1.0 / game_settings.hand_count)
             if d in self.lookahead.average_strategies_data and self.lookahead.average_strategies_data[d] is not None:
                 self.lookahead.average_strategies_data[d].fill_(0)
-            if d in self.lookahead.current_strategy_data and self.lookahead.current_strategy_data[d] is not None:
-                self.lookahead.current_strategy_data[d].fill_(0)
+            if arguments.cdbr and arguments.cdbr_new_initialization:
+                if not ((global_variables.cdbr_normal_resolve and d % 2 != 0) or (not global_variables.cdbr_normal_resolve and d % 2 == 0)):
+                    if d in self.lookahead.current_strategy_data and self.lookahead.current_strategy_data[d] is not None:
+                        self.lookahead.current_strategy_data[d].fill_(0)
+            else:
+                if d in self.lookahead.current_strategy_data and self.lookahead.current_strategy_data[d] is not None:
+                    self.lookahead.current_strategy_data[d].fill_(0)
             if d in self.lookahead.cfvs_data and self.lookahead.cfvs_data[d] is not None:
                 self.lookahead.cfvs_data[d].fill_(0)
             if d in self.lookahead.average_cfvs_data and self.lookahead.average_cfvs_data[d] is not None:
