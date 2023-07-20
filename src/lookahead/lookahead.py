@@ -231,7 +231,7 @@ class Lookahead(object):
             for child in node.children:
                 self.print_spaces(depth)         
                 lc = child.lookahead_coordinates.cpu().numpy()
-                for action_prob in self.current_strategy_data[depth + 1][int(lc[0])-1, int(lc[1])-1, int(lc[2])-1, 0, :].cpu().numpy()[0:1]:
+                for action_prob in self.current_strategy_data[depth + 1][int(lc[0])-1, int(lc[1])-1, int(lc[2])-1, 0, :].cpu().numpy():
                     print(action_prob, end=",")
                 print()
             for child in node.children:
@@ -244,7 +244,8 @@ class Lookahead(object):
         if arguments.cdbr:
             if not arguments.cdbr_new_initialization:
                 self._initialize_opponent_strategy()
-        self.print_strategy()
+        if arguments.print_strategy:
+            self.print_strategy()
         for iteration in range(1, arguments.cfr_iters + 1):
             self._set_opponent_starting_range()
             self._compute_current_strategies(iteration)
@@ -254,7 +255,8 @@ class Lookahead(object):
             self._compute_cfvs()
             self._compute_regrets()
             self._compute_cumulate_average_cfvs(iteration)
-        self.print_strategy()
+        if arguments.print_strategy:
+            self.print_strategy()
         # print([self.average_strategies_data[2][i, :, :, :, 0] for i in range(self.current_strategy_data[2].shape[0])])
         # print([self.cfvs_data[2][i, :, :, :, :, 0] for i in range(self.current_strategy_data[2].shape[0])])
 
