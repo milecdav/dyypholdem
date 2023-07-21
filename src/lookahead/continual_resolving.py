@@ -158,8 +158,9 @@ class ContinualResolving(object):
         matchstate_string, action = slumbot_query.remove_actions_from_matchstate_string(converted_state, 1)
         matchstate_strings = [matchstate_string]
         actions = [action]
-        if node.street == 2 and len(state.actions[1]) == 1 and len(state.actions[0] % 2) == 0:
-            # We need to update using last two actions
+        if (node.street == 2 and len(state.actions[1]) == 1 and len(state.actions[0]) % 2 == 0) or \
+                (node.street > 2 and len(state.actions[node.street - 1]) == 1 and len(state.actions[node.street - 2]) % 2 == 1):
+            # We need to update using last two actions because it is new round
             matchstate_string, action = slumbot_query.remove_actions_from_matchstate_string(converted_state, 2)
             matchstate_strings.append(matchstate_string)
             actions.append(action)
