@@ -141,51 +141,13 @@ class PokerTreeBuilder(object):
     # -- @param current_node the root to build the (sub)tree from
     # -- @return `current_node` after the (sub)tree has been built
     # -- @local
-    def put_matchstate_string_to_query(self, actions):
-        state = global_variables.cdbr_state
-        prev_pot = state.prev_pot        
-        matchstate_string = state.matchstate_string
-        parts = matchstate_string.split(":")
-        parts[1] = "0" if parts[1] == "1" else "1"
-        parts[3] = ""        
-        if global_variables.cdbr_normal_resolve:                    
-            current_pot = 0
-            for street in range(state.current_street):                
-                immediate_pot = 100
-                for action in state.actions[street]:
-                    if action.action == constants.ACPCActions.ccall:                        
-                        parts[3] += "c"
-                    elif action.action == constants.ACPCActions.rraise:
-                        parts[3] += "b" + str(action.raise_amount - current_pot)
-                        immediate_pot = action.raise_amount
-                    else:
-                        assert False, "We should not be in terminal node"
-                current_pot = max(immediate_pot, current_pot)
-                if street != state.current_street - 1:
-                    parts[3] += "/"
-        for action in actions:            
-            if action == constants.Actions.fold.value:                
-                parts[3] += "f"
-            elif action == constants.Actions.ccall.value:                
-                parts[3] += "c"
-            else:                
-                parts[3] += "b" + str(int(action - prev_pot))
-        parts[3] = parts[3].replace("cc", "ck")
-        parts[3] = parts[3].replace("/c", "/k")
-        card_parts = parts[4].split("/")
-        hands = card_parts[0].split("|")
-        card_parts[0] = hands[1] + "|" + hands[0]
-        parts[4] = "/".join(card_parts)
-        global_variables.cdbr_query_strings.append(":".join(parts))
-
-    def _build_tree_dfs(self, current_node, actions):      
-
+    def _build_tree_dfs(self, current_node, actions):
         current_node.id = global_variables.max_id
         global_variables.max_id += 1        
 
         if arguments.cdbr and arguments.cdbr_type == constants.CDBRType.slumbot:
             if not current_node.terminal and current_node.current_player != global_variables.cdbr_player and current_node.current_player != constants.Players.Chance:
-                self.put_matchstate_string_to_query(actions)
+                global_variables.cdbr_query_strings.append(slumbot_query.matchstate_string_to_slumbot_with_actions(global_variables.cdbr_state, actions))
                 global_variables.cdbr_node_to_index[current_node.id] = len(
                     global_variables.cdbr_query_strings) - 1
 
