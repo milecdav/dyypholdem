@@ -15,9 +15,13 @@ def create_data_from_file_only_winnings(file_path):
         current = 0
         for line in f:
             parts = line.split()
-            data.append(int(parts[1]))
-            assert int(parts[1]) == int(parts[2]) - current
-            current = int(parts[2])
+            if len(parts) == 3:
+                data.append(int(parts[1]))
+                assert int(parts[1]) == int(parts[2]) - current
+                current = int(parts[2])
+            else:
+                data.append(int(parts[1]) - current)
+                current = int(parts[1])
     return data
 
 
