@@ -13,10 +13,12 @@ from lookahead.resolving import Resolving
 from tree.tree_node import TreeNode
 
 import utils.pseudo_random as random_
+import server.slumbot_query as slumbot_query
 
 
 class ContinualResolving(object):
     last_node: TreeNode
+    last_state: ProcessedState
     decision_id: int
     last_bet: int
     position: int
@@ -50,6 +52,7 @@ class ContinualResolving(object):
         # create the starting ranges
         player_range = card_tools.get_uniform_range(first_node.board)
         opponent_range = card_tools.get_uniform_range(first_node.board)
+        global_variables.cdbr_opponent_range = opponent_range
 
         # create re-solving and re-solve the first node
         self.first_node_resolving = Resolving(self.terminal_equity)
@@ -63,6 +66,7 @@ class ContinualResolving(object):
     # -- game (a table of the type returned by @{protocol_to_node.parse_state})
     def start_new_hand(self, state: ProcessedState):
         self.last_node = None
+        self.last_state = None
         self.decision_id = 0
         self.position = state.position
         self.player = state.player
@@ -70,7 +74,7 @@ class ContinualResolving(object):
 
         if arguments.cdbr:
             # this removes the possible actions from the string since we resolve the first node
-            global_variables.cdbr_player = state.player            
+            global_variables.cdbr_player = state.player
             global_variables.cdbr_state = state
             global_variables.cdbr_normal_resolve = self.player == constants.Players.P1
             self.resolve_first_node()
@@ -91,6 +95,7 @@ class ContinualResolving(object):
         self.decision_id = self.decision_id + 1
         self.last_bet = sampled_bet
         self.last_node = node
+        self.last_state = state
 
         out = self._bet_to_action(node, sampled_bet)
 
@@ -102,10 +107,10 @@ class ContinualResolving(object):
     # -- @param state the game state where the re-solving player is to act
     # -- (a table of the type returned by @{protocol_to_node.parse_state})
     # -- @local
-    def _resolve_node(self, state, node):        
+    def _resolve_node(self, state, node):
         # 1.0 first node and P1 position
         # no need to update an invariant since this is the very first situation
-        if self.decision_id == 0 and self.player == constants.Players.P1:            
+        if self.decision_id == 0 and self.player == constants.Players.P1:
             # the strategy computation for the first decision node has been already set up
             self.current_player_range = self.starting_player_range.clone()
             self.resolving = self.first_node_resolving
@@ -133,6 +138,35 @@ class ContinualResolving(object):
 
             arguments.timer.stop("Node resolved and equities for actions calculated", log_level="DEBUG")
 
+    @staticmethod
+    def remove_last_action(matchstate_string):
+        # Remove last action from the matchstate string
+        split = matchstate_string.split(":")
+        if split[3][-1] == "/":
+            action = split[3][-2]
+            split[3] = split[3][:-2]
+        else:
+            action = split[3][-1]
+            split[3] = split[3][:-1]
+        return ":".join(split), action
+
+    # --- Updates the opponents range when we do cdbr and use unsafe resolving
+    def _update_opponent_range(self, state, node):
+        converted_state = slumbot_query.matchstate_string_to_slumbot_with_actions(state, [])
+        matchstate_string, action = slumbot_query.remove_actions_from_matchstate_string(converted_state, 1)
+        matchstate_strings = [matchstate_string]
+        actions = [action]
+        if node.street == 2 and len(state.actions[1]) == 1:
+            # We need to update using last two actions
+            matchstate_string, action = slumbot_query.remove_actions_from_matchstate_string(converted_state, 2)
+            matchstate_strings.append(matchstate_string)
+            actions.append(action)
+        for matchstate_string in reversed(matchstate_strings):
+            if matchstate_string in global_variables.cdbr_query_strings:
+                print(matchstate_string)
+                print(global_variables.cdbr_query_strings)
+        global_variables.cdbr_opponent_range = card_tools.normalize_range(node.board, global_variables.cdbr_opponent_range)
+
     # --- Updates the player's range and the opponent's counterfactual values to be
     # -- consistent with game actions since the last re-solved state.
     # -- Updates it only for actions we did not make, since we update the invariant for our action as soon as we make it.
@@ -154,6 +188,10 @@ class ContinualResolving(object):
             # if street has change, we have to mask out the colliding hands
             self.current_player_range = card_tools.normalize_range(node.board, self.current_player_range)
 
+            # 1.3 opponent range if we do cdbr
+            if arguments.cdbr:
+                self._update_opponent_range(state, node)
+
         # 2.0 first decision for P2
         elif self.decision_id == 0:
             assert self.player == constants.Players.P2
@@ -164,6 +202,8 @@ class ContinualResolving(object):
 
         # 3.0 handle game within the street
         else:
+            if arguments.cdbr:
+                self._update_opponent_range(state, node)
             assert self.last_node.street == node.street
 
     # --- Samples an action to take from the strategy at the given game state.
