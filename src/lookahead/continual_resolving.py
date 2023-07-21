@@ -161,10 +161,28 @@ class ContinualResolving(object):
             matchstate_string, action = slumbot_query.remove_actions_from_matchstate_string(converted_state, 2)
             matchstate_strings.append(matchstate_string)
             actions.append(action)
-        for matchstate_string in reversed(matchstate_strings):
-            if matchstate_string in global_variables.cdbr_query_strings:
-                print(matchstate_string)
-                print(global_variables.cdbr_query_strings)
+        all_precomputed = True
+        for matchstate_string in matchstate_strings:
+            if matchstate_string not in global_variables.cdbr_query_strings:
+                all_precomputed = False
+                break
+        strategies = []
+        if not all_precomputed:
+            strategies = slumbot_query.get_strategy_from_slumbot(matchstate_strings)
+        else:
+            for matchstate_string in matchstate_strings:
+                strategies.append(global_variables.cdbr_query_results[global_variables.cdbr_query_strings.index(matchstate_string)])
+        for i in range(len(matchstate_strings) - 1, -1, -1):
+            if strategies[i][0] == "e":
+                raise ValueError(f"Slumbot failed to return strategy for matchstate string {matchstate_strings[i]}")
+            action = actions[i]
+            if action == "k":
+                action = "c"
+            tensor_strategy = global_variables.cdbr_opponent_range.clone().fill_(0)
+            for j, hand_action in enumerate(strategies[i]):
+                if hand_action == action:
+                    tensor_strategy[j] = 1.
+            global_variables.cdbr_opponent_range.mul_(tensor_strategy)
         global_variables.cdbr_opponent_range = card_tools.normalize_range(node.board, global_variables.cdbr_opponent_range)
 
     # --- Updates the player's range and the opponent's counterfactual values to be

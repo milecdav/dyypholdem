@@ -280,7 +280,7 @@ class Lookahead(object):
     def _set_opponent_starting_range(self):
         if self.reconstruction_opponent_cfvs is not None:
             if arguments.cdbr:
-                self.ranges_data[1][:, :, :, :, 1, :].copy_(self.reconstruction_gadget.input_opponent_range)
+                self.ranges_data[1][:, :, :, :, 1, :].copy_(global_variables.cdbr_opponent_range)
             else:
                 # note that CFVs indexing is swapped, thus the CFVs for the reconstruction player are for player '1'
                 opponent_range = self.reconstruction_gadget.compute_opponent_range(self.cfvs_data[1][:, :, :, :, 0, :])
