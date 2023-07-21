@@ -12,6 +12,10 @@ continual_resolving = ContinualResolving()
 
 game_hands = [
     [
+        {'old_action': '', 'action': 'b200', 'client_pos': 0, 'hole_cards': ['Tc', '2h'], 'board': []},
+        {'old_action': 'b200', 'action': 'b200c/', 'client_pos': 0, 'hole_cards': ['Tc', '2h'], 'board': ['9c', '2d', '9h']},
+    ],
+    [
         {'old_action': '', 'action': '', 'client_pos': 1, 'hole_cards': ['Ac', 'Td'], 'board': []},
         {'old_action': '', 'action': 'ck/k', 'client_pos': 1, 'hole_cards': ['Ac', 'Td'], 'board': ['As', 'Kh', '2d']},
         {'old_action': 'ck/k', 'action': 'ck/kk/k', 'client_pos': 1, 'hole_cards': ['Ac', 'Td'], 'board': ['As', 'Kh', '2d', 'Qd']},
