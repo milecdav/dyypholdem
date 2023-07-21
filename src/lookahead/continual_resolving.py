@@ -152,7 +152,8 @@ class ContinualResolving(object):
 
     # --- Updates the opponents range when we do cdbr and use unsafe resolving
     def _update_opponent_range(self, state, node):
-        if node.street == 2 and len(state.actions[1]) == 0:
+        if (node.street == 2 and len(state.actions[1]) == 0 and len(state.actions[0]) % 2 == 0) or \
+            (node.street > 2 and len(state.actions[node.street - 1]) == 0 and len(state.actions[node.street - 2]) % 2 == 1):
             return
         converted_state = slumbot_query.matchstate_string_to_slumbot_with_actions(state, [])
         matchstate_string, action = slumbot_query.remove_actions_from_matchstate_string(converted_state, 1)
