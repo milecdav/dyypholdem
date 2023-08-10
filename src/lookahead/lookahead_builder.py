@@ -351,7 +351,8 @@ class LookaheadBuilder(object):
 
         # transition call cannot be allin call
         if node.current_player == constants.Players.Chance:
-            assert parent_id <= self.lookahead.nonallinbets_count[layer - 2]
+            if not (arguments.cdbr and arguments.cdbr_only_fold_call_rounds is not None):
+                assert parent_id <= self.lookahead.nonallinbets_count[layer - 2]
 
         if layer < self.lookahead.depth + 1:
             gp_nonallinbets_count = self.lookahead.nonallinbets_count[layer - 2]
@@ -457,7 +458,13 @@ class LookaheadBuilder(object):
                 self.lookahead.indices[d] = [before, self.lookahead.num_pot_sizes]
 
         if self.lookahead.num_pot_sizes == 0:
-            return
+            if arguments.cdbr and arguments.cdbr_only_fold_call_rounds is not None:
+                arguments.logger.warning("Zero pot sizes in lookahead.")
+                before = self.lookahead.num_pot_sizes
+                self.lookahead.num_pot_sizes = self.lookahead.num_pot_sizes + 1
+                self.lookahead.indices[2] = [before, self.lookahead.num_pot_sizes]
+            else:
+                return
 
         self.lookahead.next_round_pot_sizes = arguments.Tensor(self.lookahead.num_pot_sizes).zero_()
 
