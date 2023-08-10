@@ -155,38 +155,39 @@ class ContinualResolving(object):
         if (node.street == 2 and len(state.actions[1]) == 0 and len(state.actions[0]) % 2 == 0) or \
                 (node.street > 2 and len(state.actions[node.street - 1]) == 0 and len(state.actions[node.street - 2]) % 2 == 1):
             return
-        converted_state = slumbot_query.matchstate_string_to_slumbot_with_actions(state, [])
-        matchstate_string, action = slumbot_query.remove_actions_from_matchstate_string(converted_state, 1)
-        matchstate_strings = [matchstate_string]
-        actions = [action]
-        if (node.street == 2 and len(state.actions[1]) == 1 and len(state.actions[0]) % 2 == 0) or \
-                (node.street > 2 and len(state.actions[node.street - 1]) == 1 and len(state.actions[node.street - 2]) % 2 == 1):
-            # We need to update using last two actions because it is new round
-            matchstate_string, action = slumbot_query.remove_actions_from_matchstate_string(converted_state, 2)
-            matchstate_strings.append(matchstate_string)
-            actions.append(action)
-        all_precomputed = True
-        for matchstate_string in matchstate_strings:
-            if matchstate_string not in global_variables.cdbr_query_strings:
-                all_precomputed = False
-                break
-        strategies = []
-        if not all_precomputed:
-            strategies = slumbot_query.get_strategy_from_slumbot(matchstate_strings)
-        else:
+        if arguments.cdbr_type == constants.CDBRType.slumbot:
+            converted_state = slumbot_query.matchstate_string_to_slumbot_with_actions(state, [])
+            matchstate_string, action = slumbot_query.remove_actions_from_matchstate_string(converted_state, 1)
+            matchstate_strings = [matchstate_string]
+            actions = [action]
+            if (node.street == 2 and len(state.actions[1]) == 1 and len(state.actions[0]) % 2 == 0) or \
+                    (node.street > 2 and len(state.actions[node.street - 1]) == 1 and len(state.actions[node.street - 2]) % 2 == 1):
+                # We need to update using last two actions because it is new round
+                matchstate_string, action = slumbot_query.remove_actions_from_matchstate_string(converted_state, 2)
+                matchstate_strings.append(matchstate_string)
+                actions.append(action)
+            all_precomputed = True
             for matchstate_string in matchstate_strings:
-                strategies.append(global_variables.cdbr_query_results[global_variables.cdbr_query_strings.index(matchstate_string)])
-        for i in range(len(matchstate_strings) - 1, -1, -1):
-            if strategies[i][0] == "e":
-                raise ValueError(f"Slumbot failed to return strategy for matchstate string {matchstate_strings[i]}")
-            action = actions[i]
-            if action == "k":
-                action = "c"
-            tensor_strategy = global_variables.cdbr_opponent_range.clone().fill_(0)
-            for j, hand_action in enumerate(strategies[i]):
-                if hand_action == action:
-                    tensor_strategy[j] = 1.
-            global_variables.cdbr_opponent_range.mul_(tensor_strategy)
+                if matchstate_string not in global_variables.cdbr_query_strings:
+                    all_precomputed = False
+                    break
+            strategies = []
+            if not all_precomputed:
+                strategies = slumbot_query.get_strategy_from_slumbot(matchstate_strings)
+            else:
+                for matchstate_string in matchstate_strings:
+                    strategies.append(global_variables.cdbr_query_results[global_variables.cdbr_query_strings.index(matchstate_string)])
+            for i in range(len(matchstate_strings) - 1, -1, -1):
+                if strategies[i][0] == "e":
+                    raise ValueError(f"Slumbot failed to return strategy for matchstate string {matchstate_strings[i]}")
+                action = actions[i]
+                if action == "k":
+                    action = "c"
+                tensor_strategy = global_variables.cdbr_opponent_range.clone().fill_(0)
+                for j, hand_action in enumerate(strategies[i]):
+                    if hand_action == action:
+                        tensor_strategy[j] = 1.
+                global_variables.cdbr_opponent_range.mul_(tensor_strategy)
         global_variables.cdbr_opponent_range = card_tools.normalize_range(node.board, global_variables.cdbr_opponent_range)
 
     # --- Updates the player's range and the opponent's counterfactual values to be
@@ -262,7 +263,7 @@ class ContinualResolving(object):
 
         # 3.0 sample the action by doing cumsum and uniform sample
         if arguments.use_pseudo_random:
-            r = 0.55
+            r = 0.9
         else:
             r = random_.random()
 
@@ -290,10 +291,23 @@ class ContinualResolving(object):
         str_action = f"Cumulated action cutoff {r:.3f} -> playing action in probability range {(lower_range_actions or [0])[-1]:.3f} to {higher_range_actions[0]:.3f} => {sampled_bet_action}"
         arguments.logger.success(str_action)
 
+        sampled_strategy = None
+        if arguments.cdbr_only_fold_call_rounds is not None and node.street in arguments.cdbr_only_fold_call_rounds:
+            strategy_changed = False
+            if sampled_bet > 0:
+                strategy_changed = True
+                sampled_strategy = self.resolving.get_action_strategy(sampled_bet)
+                sampled_bet = -1
+                str_no_fold = "Changed RAISE to CHECK or CALL"
+                arguments.logger.info(str_no_fold)
+
         # 4.0 update the invariants based on our action
         self.current_opponent_cfvs_bound = self.resolving.get_action_cfv(sampled_bet)
         strategy = self.resolving.get_action_strategy(sampled_bet)
-        self.current_player_range.mul_(strategy)
+        if arguments.cdbr_only_fold_call_rounds is not None and node.street in arguments.cdbr_only_fold_call_rounds and strategy_changed:
+            self.current_player_range.mul_(strategy.add(sampled_strategy))
+        else:
+            self.current_player_range.mul_(strategy)
         self.current_player_range = card_tools.normalize_range(node.board, self.current_player_range)
 
         return sampled_bet
