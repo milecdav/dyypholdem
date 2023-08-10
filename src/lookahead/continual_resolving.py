@@ -263,7 +263,7 @@ class ContinualResolving(object):
 
         # 3.0 sample the action by doing cumsum and uniform sample
         if arguments.use_pseudo_random:
-            r = 0.9
+            r = 0.6
         else:
             r = random_.random()
 
@@ -291,23 +291,10 @@ class ContinualResolving(object):
         str_action = f"Cumulated action cutoff {r:.3f} -> playing action in probability range {(lower_range_actions or [0])[-1]:.3f} to {higher_range_actions[0]:.3f} => {sampled_bet_action}"
         arguments.logger.success(str_action)
 
-        sampled_strategy = None
-        if arguments.cdbr_only_fold_call_rounds is not None and node.street in arguments.cdbr_only_fold_call_rounds:
-            strategy_changed = False
-            if sampled_bet > 0:
-                strategy_changed = True
-                sampled_strategy = self.resolving.get_action_strategy(sampled_bet)
-                sampled_bet = -1
-                str_no_fold = "Changed RAISE to CHECK or CALL"
-                arguments.logger.info(str_no_fold)
-
         # 4.0 update the invariants based on our action
         self.current_opponent_cfvs_bound = self.resolving.get_action_cfv(sampled_bet)
         strategy = self.resolving.get_action_strategy(sampled_bet)
-        if arguments.cdbr_only_fold_call_rounds is not None and node.street in arguments.cdbr_only_fold_call_rounds and strategy_changed:
-            self.current_player_range.mul_(strategy.add(sampled_strategy))
-        else:
-            self.current_player_range.mul_(strategy)
+        self.current_player_range.mul_(strategy)
         self.current_player_range = card_tools.normalize_range(node.board, self.current_player_range)
 
         return sampled_bet

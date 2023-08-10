@@ -37,6 +37,8 @@ class BetSizing(object):
         min_raise_size = max(min_raise_size, game_settings.ante)
         min_raise_size = min(max_raise_size, min_raise_size)
 
+        if arguments.cdbr and arguments.cdbr_only_fold_call_rounds is not None and node.street in arguments.cdbr_only_fold_call_rounds:
+            return torch.tensor(0)
         if min_raise_size == 0:
             return torch.tensor(0)   # hack to create 0-dimensional tensor
         elif min_raise_size == max_raise_size:
