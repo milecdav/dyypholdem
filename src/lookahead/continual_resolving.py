@@ -1,3 +1,5 @@
+import pickle
+
 import torch
 
 import settings.arguments as arguments
@@ -14,6 +16,7 @@ from tree.tree_node import TreeNode
 
 import utils.pseudo_random as random_
 import server.slumbot_query as slumbot_query
+import utils.tree_localization as tree_localization
 
 
 class ContinualResolving(object):
@@ -79,6 +82,28 @@ class ContinualResolving(object):
             global_variables.cdbr_normal_resolve = self.player == constants.Players.P1
             self.resolve_first_node()
 
+    def only_sample_action(self, state: ProcessedState, node: TreeNode):
+        sampled_bet = self._sample_bet(state, node)
+
+        self.decision_id = self.decision_id + 1
+        self.last_bet = sampled_bet
+        self.last_node = node
+        self.last_state = state
+
+        out = self._bet_to_action(node, sampled_bet)
+
+        if arguments.cdbr and global_variables.cdbr_exploited:
+            child_index = -1
+            for i, action in enumerate(self.resolving.get_possible_actions()):
+                if action == sampled_bet:
+                    child_index = i
+                    break
+            if self.resolving.lookahead_tree.children[child_index].current_player == constants.Players.Chance:
+                with open(arguments.cdbr_ready_path, 'w') as handle:
+                    handle.write("0")
+                global_variables.cdbr_exploited_ready = False
+        return out
+
     # --- Re-solves a node and chooses the re-solving player's next action.
     # -- @param node the game node where the re-solving player is to act (a table of
     # -- the type returned by @{protocol_to_node.parsed_state_to_node})
@@ -101,6 +126,14 @@ class ContinualResolving(object):
 
         return out
 
+    # --- Re-solves a node when the other player is acting to create strategy for exploiter
+    # -- @param node the game node where the re-solving player is to act (a table of
+    # -- the type returned by @{protocol_to_node.parsed_state_to_node})
+    # -- @param state the game state where the re-solving player is to act
+    # -- (a table of the type returned by @{protocol_to_node.parse_state})
+    def only_resolve(self, state: ProcessedState, node: TreeNode):
+        self._resolve_node(state, node)
+
     # --- Re-solves a node to choose the re-solving player's next action.
     # -- @param node the game node where the re-solving player is to act (a table of
     # -- the type returned by @{protocol_to_node.parsed_state_to_node})
@@ -119,9 +152,13 @@ class ContinualResolving(object):
         else:
             global_variables.cdbr_state = state
             assert not node.terminal
-            assert node.current_player == self.player
-
-            global_variables.cdbr_normal_resolve = True
+            if arguments.cdbr and global_variables.cdbr_exploited:
+                if node.current_player == self.player:
+                    global_variables.cdbr_normal_resolve = True
+                else:
+                    global_variables.cdbr_normal_resolve = False
+            else:
+                assert node.current_player == self.player
             arguments.logger.debug(f"Resolving current node with {arguments.cfr_iters} iterations")
 
             # 2.1 update the invariant based on actions we did not make
@@ -135,6 +172,13 @@ class ContinualResolving(object):
 
             self.resolving = Resolving(self.terminal_equity)
             self.resolving.resolve(node, self.current_player_range, self.current_opponent_cfvs_bound)
+
+            if arguments.cdbr and global_variables.cdbr_exploited:
+                with open(arguments.cdbr_strategy_path.format(global_variables.cdbr_exploitation_id), 'wb') as handle:
+                    pickle.dump(self.resolving.resolve_results, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                with open(arguments.cdbr_ready_path.format(global_variables.cdbr_exploitation_id), 'w') as handle:
+                    handle.write("1")
+                global_variables.cdbr_exploited_ready = True
 
             arguments.timer.stop("Node resolved and equities for actions calculated", log_level="DEBUG")
 
@@ -150,12 +194,43 @@ class ContinualResolving(object):
             split[3] = split[3][:-1]
         return ":".join(split), action
 
+    def only_update_opponent_range(self, state, node):
+        print("Updating opponent range")
+        if arguments.cdbr_type == constants.CDBRType.slumbot and not global_variables.cdbr_exploiter:
+            converted_state = slumbot_query.matchstate_string_to_slumbot_with_actions(state, [])
+            matchstate_string, action = slumbot_query.remove_actions_from_matchstate_string(converted_state, 1)
+            precomputed = matchstate_string in global_variables.cdbr_query_strings
+            if not precomputed:
+                strategy = slumbot_query.get_strategy_from_slumbot([matchstate_string])
+            else:
+                strategy = global_variables.cdbr_query_results[global_variables.cdbr_query_strings.index(matchstate_string)]
+            if strategy[0] == "e":
+                raise ValueError(f"Slumbot failed to return strategy for matchstate string {matchstate_string}")
+            if action == "k":
+                action = "c"
+            tensor_strategy = global_variables.cdbr_opponent_range.clone().fill_(0)
+            for j, hand_action in enumerate(strategy):
+                if hand_action == action:
+                    tensor_strategy[j] = 1.
+            global_variables.cdbr_opponent_range.mul_(tensor_strategy)
+        if global_variables.cdbr_exploiter:
+            # tensor_strategy = global_variables.cdbr_opponent_range.clone().fill_(0)
+            with open(arguments.cdbr_strategy_path.format(global_variables.cdbr_exploitation_id), 'rb') as handle:
+                strategy = pickle.load(handle)
+                print(global_variables.cdbr_exploiter_prev_node)
+                found_node, depth = tree_localization.find_node(global_variables.cdbr_exploiter_prev_node, strategy.tree, 2)
+                lc = found_node.lookahead_coordinates.cpu().numpy()
+                strat = strategy.full_strategy[depth][:, int(lc[0]) - 1, int(lc[1]) - 1, int(lc[2]) - 1, 0, :].cpu().numpy()
+                print(strat)
+            # global_variables.cdbr_opponent_range.mul_(tensor_strategy)
+        global_variables.cdbr_opponent_range = card_tools.normalize_range(node.board, global_variables.cdbr_opponent_range)
+
     # --- Updates the opponents range when we do cdbr and use unsafe resolving
     def _update_opponent_range(self, state, node):
         if (node.street == 2 and len(state.actions[1]) == 0 and len(state.actions[0]) % 2 == 0) or \
                 (node.street > 2 and len(state.actions[node.street - 1]) == 0 and len(state.actions[node.street - 2]) % 2 == 1):
             return
-        if arguments.cdbr_type == constants.CDBRType.slumbot:
+        if arguments.cdbr_type == constants.CDBRType.slumbot and not global_variables.cdbr_exploiter:
             converted_state = slumbot_query.matchstate_string_to_slumbot_with_actions(state, [])
             matchstate_string, action = slumbot_query.remove_actions_from_matchstate_string(converted_state, 1)
             matchstate_strings = [matchstate_string]
@@ -190,6 +265,10 @@ class ContinualResolving(object):
                 global_variables.cdbr_opponent_range.mul_(tensor_strategy)
         global_variables.cdbr_opponent_range = card_tools.normalize_range(node.board, global_variables.cdbr_opponent_range)
 
+    # --- Exposing _update_invariant for cdbr_cdbr which need to do it separately
+    def only_update_invariant(self, state, node):
+        self._update_invariant(state, node)
+
     # --- Updates the player's range and the opponent's counterfactual values to be
     # -- consistent with game actions since the last re-solved state.
     # -- Updates it only for actions we did not make, since we update the invariant for our action as soon as we make it.
@@ -212,7 +291,7 @@ class ContinualResolving(object):
             self.current_player_range = card_tools.normalize_range(node.board, self.current_player_range)
 
             # 1.3 opponent range if we do cdbr
-            if arguments.cdbr:
+            if arguments.cdbr and not (global_variables.cdbr_exploiter or global_variables.cdbr_exploited):
                 self._update_opponent_range(state, node)
 
         # 2.0 first decision for P2
@@ -225,7 +304,7 @@ class ContinualResolving(object):
 
         # 3.0 handle game within the street
         else:
-            if arguments.cdbr:
+            if arguments.cdbr and not (global_variables.cdbr_exploiter or global_variables.cdbr_exploited):
                 self._update_opponent_range(state, node)
             assert self.last_node.street == node.street
 
@@ -269,6 +348,8 @@ class ContinualResolving(object):
 
         hand_strategy_cumsum = torch.cumsum(hand_strategy, 0)
         sampled_bet = int(possible_bets[hand_strategy_cumsum.gt(r)][0].item())
+        self.current_opponent_cfvs_bound = self.resolving.get_action_cfv(sampled_bet)
+        strategy = self.resolving.get_action_strategy(sampled_bet)
         # change fold to check if it is free
         if sampled_bet == -2 and state.bet1 == state.bet2:
             sampled_bet = -1
@@ -290,10 +371,11 @@ class ContinualResolving(object):
         higher_range_actions = hand_strategy_cumsum[hand_strategy_cumsum.gt(r)].tolist()
         str_action = f"Cumulated action cutoff {r:.3f} -> playing action in probability range {(lower_range_actions or [0])[-1]:.3f} to {higher_range_actions[0]:.3f} => {sampled_bet_action}"
         arguments.logger.success(str_action)
-
         # 4.0 update the invariants based on our action
-        self.current_opponent_cfvs_bound = self.resolving.get_action_cfv(sampled_bet)
-        strategy = self.resolving.get_action_strategy(sampled_bet)
+        print("Strategy -> ", end="")
+        for i in strategy:
+            print(i.item(), end=' ')
+        print()
         self.current_player_range.mul_(strategy)
         self.current_player_range = card_tools.normalize_range(node.board, self.current_player_range)
 
