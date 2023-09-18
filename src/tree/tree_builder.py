@@ -1,6 +1,7 @@
 from typing import List
 import copy
 import numpy as np
+import pickle
 
 import settings.arguments as arguments
 import settings.constants as constants
@@ -13,6 +14,7 @@ import utils.global_variables as global_variables
 from tree.tree_node import TreeNode, BuildTreeParams
 from tree.strategy_filling import StrategyFilling
 from game.bet_sizing import BetSizing
+import time
 
 
 class PokerTreeBuilder(object):
@@ -221,6 +223,17 @@ class PokerTreeBuilder(object):
         # print(global_variables.cdbr_query_strings)
         if arguments.cdbr and arguments.cdbr_type == constants.CDBRType.slumbot:
             global_variables.cdbr_query_results = slumbot_query.get_strategy_from_slumbot(global_variables.cdbr_query_strings)
+
+        if arguments.cdbr and global_variables.cdbr_exploiter:
+            while True:
+                with open(arguments.cdbr_ready_path.format(global_variables.cdbr_exploitation_id), 'r') as handle:
+                    ready = bool(handle.read())
+                    if ready:
+                        break
+                    else:
+                        time.sleep(1)
+            with open(arguments.cdbr_strategy_path.format(global_variables.cdbr_exploitation_id), 'rb') as handle:
+                global_variables.cdbr_exploited_results = pickle.load(handle)
 
         strategy_filling = StrategyFilling()
         strategy_filling.fill_strategy(root)
