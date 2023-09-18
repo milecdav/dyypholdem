@@ -1,5 +1,6 @@
 
 import settings.arguments as arguments
+from tree.tree_node import TreeNode
 
 
 class ResolveResults(object):
@@ -10,6 +11,8 @@ class ResolveResults(object):
     root_cfvs_both_players: arguments.Tensor
     children_cfvs: arguments.Tensor
     actions: list
+    full_strategy: arguments.Tensor
+    tree: TreeNode
 
     def __init__(self):
         pass
