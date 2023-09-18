@@ -181,6 +181,11 @@ class Lookahead(object):
         scaler = scaler.mul_(arguments.cfr_iters - arguments.cfr_skip_iters)
         out.children_cfvs.div_(scaler.view(out.children_cfvs.shape))
 
+        # Only used for the CDBR vs CDBR
+        if arguments.cdbr and global_variables.cdbr_exploited:
+            out.full_strategy = self.average_strategies_data
+            out.tree = self.tree
+
         assert out.children_cfvs is not None
         assert out.strategy is not None
         assert out.achieved_cfvs is not None
@@ -229,9 +234,9 @@ class Lookahead(object):
             self.print_spaces(depth)
             print(f"Strategy in depth {depth} with bets {node.bets}")
             for child in node.children:
-                self.print_spaces(depth)         
+                self.print_spaces(depth)
                 lc = child.lookahead_coordinates.cpu().numpy()
-                for action_prob in self.current_strategy_data[depth + 1][int(lc[0])-1, int(lc[1])-1, int(lc[2])-1, 0, :].cpu().numpy():
+                for action_prob in self.current_strategy_data[depth + 1][int(lc[0]) - 1, int(lc[1]) - 1, int(lc[2]) - 1, 0, :].cpu().numpy():
                     print(action_prob, end=",")
                 print()
             for child in node.children:
@@ -343,9 +348,9 @@ class Lookahead(object):
     # -- @local
     def _compute_update_average_strategies(self, iteration):
         if iteration > arguments.cfr_skip_iters:
-            # no need to go through layers since we care for the average strategy only in the first node anyway
-            # note that if you wanted to average strategy on lower layers, you would need to weight the current strategy by the current reach probability
             self.average_strategies_data[2].add_(self.current_strategy_data[2])
+            for layer in range(3, self.depth + 1):
+                self.average_strategies_data[layer].add_(self.ranges_data[layer][:, :, :, :, self.acting_player[layer - 1] - 1, :])
 
     # --- Using the players' reach probabilities, computes their counterfactual
     # -- values at all terminal states of the lookahead.
@@ -528,16 +533,16 @@ class Lookahead(object):
     # -- @local
     def _compute_normalize_average_strategies(self):
         # using regrets_sum as a placeholder container
-        player_avg_strategy = self.average_strategies_data[2]
-        player_avg_strategy_sum = self.regrets_sum[2]
+        for layer in range(2, self.depth + 1):
+            player_avg_strategy = self.average_strategies_data[layer]
 
-        player_avg_strategy_sum = torch.sum(player_avg_strategy, 0)
-        player_avg_strategy.div_(player_avg_strategy_sum.expand_as(player_avg_strategy))
+            player_avg_strategy_sum = torch.sum(player_avg_strategy, 0)
+            player_avg_strategy.div_(player_avg_strategy_sum.expand_as(player_avg_strategy))
 
-        # if the strategy is 'empty' (zero reach), strategy does not matter but we need to make sure
-        # it sums to one -> now we set to always fold
-        player_avg_strategy[0][torch.ne(player_avg_strategy[0], player_avg_strategy[0]).bool()] = 1
-        player_avg_strategy[torch.ne(player_avg_strategy, player_avg_strategy).bool()] = 0
+            # if the strategy is 'empty' (zero reach), strategy does not matter but we need to make sure
+            # it sums to one -> now we set to always fold
+            player_avg_strategy[0][torch.ne(player_avg_strategy[0], player_avg_strategy[0]).bool()] = 1
+            player_avg_strategy[torch.ne(player_avg_strategy, player_avg_strategy).bool()] = 0
 
     # --- Normalizes the players' average counterfactual values.
     # --
