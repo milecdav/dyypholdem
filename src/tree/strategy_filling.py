@@ -1,6 +1,7 @@
 import settings.arguments as arguments
 import settings.constants as constants
 import settings.game_settings as game_settings
+import utils.tree_localization as tree_localization
 
 import utils.global_variables as global_variables
 
@@ -77,24 +78,30 @@ class StrategyFilling(object):
         if not node.terminal:
             node.strategy = arguments.Tensor(len(node.children), game_settings.hand_count).fill_(0.0)
             if arguments.cdbr:
-                if arguments.cdbr_type == constants.CDBRType.uniform_random:
-                    node.strategy.fill_(1.0 / len(node.children))
-                elif arguments.cdbr_type == constants.CDBRType.always_fold:
-                    node.strategy[0, :] = 1.0
-                elif arguments.cdbr_type == constants.CDBRType.always_call:
-                    node.strategy[1, :] = 1.0
-                elif arguments.cdbr_type == constants.CDBRType.slumbot:
-                    if node.id in global_variables.cdbr_node_to_index:
-                        results = global_variables.cdbr_query_results[global_variables.cdbr_node_to_index[node.id]]
-                        if results[0] == "e":
-                            arguments.logger.trace(f"Error from query for matchstate {global_variables.cdbr_query_strings[global_variables.cdbr_node_to_index[node.id]]}")
-                            node.strategy[1, :] = 1.0
-                        else:
-                            action_to_index = {}
-                            for index, action in enumerate(node.actions.cpu().numpy()):
-                                action = int(action)
-                                action_to_index[action] = index
-                                # print(action_to_index)
-                            # print(global_variables.cdbr_query_strings[global_variables.cdbr_node_to_index[node.id]])
-                            for i, value in enumerate([self.action_to_closest_index(action_to_index, self.convert_action(a)) for a in results]):
-                                node.strategy[value, i] = 1.0
+                if global_variables.cdbr_exploiter:
+                    # print("Need this one:", node.simple_string())
+                    corresponding_node = tree_localization.find_node(node, global_variables.cdbr_exploited_results.tree, 2)
+                    # print(node.simple_string())
+                    # print(corresponding_node.simple_string())
+                else:
+                    if arguments.cdbr_type == constants.CDBRType.uniform_random:
+                        node.strategy.fill_(1.0 / len(node.children))
+                    elif arguments.cdbr_type == constants.CDBRType.always_fold:
+                        node.strategy[0, :] = 1.0
+                    elif arguments.cdbr_type == constants.CDBRType.always_call:
+                        node.strategy[1, :] = 1.0
+                    elif arguments.cdbr_type == constants.CDBRType.slumbot:
+                        if node.id in global_variables.cdbr_node_to_index:
+                            results = global_variables.cdbr_query_results[global_variables.cdbr_node_to_index[node.id]]
+                            if results[0] == "e":
+                                arguments.logger.trace(f"Error from query for matchstate {global_variables.cdbr_query_strings[global_variables.cdbr_node_to_index[node.id]]}")
+                                node.strategy[1, :] = 1.0
+                            else:
+                                action_to_index = {}
+                                for index, action in enumerate(node.actions.cpu().numpy()):
+                                    action = int(action)
+                                    action_to_index[action] = index
+                                    # print(action_to_index)
+                                # print(global_variables.cdbr_query_strings[global_variables.cdbr_node_to_index[node.id]])
+                                for i, value in enumerate([self.action_to_closest_index(action_to_index, self.convert_action(a)) for a in results]):
+                                    node.strategy[value, i] = 1.0
