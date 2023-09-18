@@ -1,4 +1,3 @@
-
 import settings.arguments as arguments
 import settings.constants as constants
 import settings.game_settings as game_settings
@@ -12,7 +11,6 @@ import game.card_to_string_conversion as card_conversion
 
 
 class ACPCGame(object):
-
     debug_msg: str
     network_communication: ACPCNetworkCommunication
     last_msg: str
@@ -49,6 +47,64 @@ class ACPCGame(object):
         else:
             arguments.logger.debug("Not our turn...")
         return None, None
+
+    # --- Receives and parses the next poker situation does not matter if we act or not.
+    # -- Blocks until the server sends a situation.
+    # -- @return the parsed state representation of the poker situation (see
+    # -- @{protocol_to_node.parse_state})
+    # -- @return a public tree node for the state (see
+    # -- @{protocol_to_node.parsed_state_to_node})
+    def get_next_situation_for_cdbr_vs_cdbr(self) -> (protocol_to_node.ProcessedState, TreeNode):
+        # 1.0 get the message from the dealer
+        msg = self.network_communication.get_line()
+        print(msg)
+
+        if not msg:
+            arguments.logger.trace("Received empty message from server -> ending game")
+            return None, None, 0
+
+        arguments.logger.info(f"Received ACPC dealer message: {msg.strip()}")
+
+        # 2.0 parse the string to our state representation
+        parsed_state = protocol_to_node.parse_state(msg)
+        arguments.logger.debug(parsed_state)
+
+        # 3.0 figure out if we should act
+        # current player to act is us
+        if parsed_state.acting_player == constants.Players.Chance:
+            # hand has ended
+            my_bet = parsed_state.bet2 if parsed_state.position == 0 else parsed_state.bet1
+            opp_bet = parsed_state.bet1 if parsed_state.position == 0 else parsed_state.bet2
+            if parsed_state.all_actions[-1].action is constants.ACPCActions.fold:
+                have_won = my_bet >= opp_bet
+            else:
+                my_final_hand = parsed_state.my_hand_string + parsed_state.board
+                opp_final_hand = parsed_state.opponent_hand_string + parsed_state.board
+                my_strength = Evaluator.evaluate_seven_card_hand(card_conversion.string_to_board(my_final_hand))
+                opp_strength = Evaluator.evaluate_seven_card_hand(card_conversion.string_to_board(opp_final_hand))
+                have_won = my_strength.item() <= opp_strength.item()
+
+            winner = parsed_state.player if have_won else (constants.Players(1 - parsed_state.player.value))
+            winnings = opp_bet if have_won else -my_bet
+            arguments.logger.trace(f"Hand ended with winner {winner}")
+            arguments.logger.trace(f"Final bets: {parsed_state.player}={my_bet}, {constants.Players(1 - parsed_state.player.value)}={opp_bet}")
+
+            return parsed_state, None, winnings
+
+        else:
+            if parsed_state.bet1 == parsed_state.bet2 and parsed_state.bet1 == game_settings.stack:
+                # we should not act since this is an allin situations
+                arguments.logger.debug("All in situation")
+            if parsed_state.acting_player == parsed_state.player:
+                # This is our turn to act
+                arguments.logger.debug("Our turn >>>")
+                self.last_msg = msg.strip()
+            else:
+                # This is opponents turn to act
+                arguments.logger.debug("Not our turn...")
+            # create a tree node from the current state
+            node = protocol_to_node.parsed_state_to_node(parsed_state)
+            return parsed_state, node, 0
 
     # --- Receives and parses the next poker situation where DyypHoldem must act.
     # --
