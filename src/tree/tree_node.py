@@ -28,7 +28,7 @@ class TreeNode:
     lookahead_coordinates: arguments.Tensor = None
 
     def simple_string(self):
-        return f"Type={self.type}, depth={self.depth}, street={arguments.street_names[self.street]}, player={self.current_player}, bets=({self.bets[0].item()}, {self.bets[1].item()}), pot={self.pot}"
+        return f"Type={self.type}, depth={self.depth}, street={arguments.street_names[self.street]}, player={self.current_player}, bets=({self.bets[0].item()}, {self.bets[1].item()}), pot={self.pot}, cards={self.board_string}"
 
     def __repr__(self, level=0):
         if level > 3:
