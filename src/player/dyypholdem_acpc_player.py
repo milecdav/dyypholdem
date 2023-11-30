@@ -100,6 +100,9 @@ if __name__ == "__main__":
 
     continual_resolving = ContinualResolving()
 
+    if arguments.cdrnr:
+        arguments.logger.info(f"Starting CDRNR with p={arguments.cdrnr_p}")
+
     if arguments.use_pseudo_random:
         random_.manual_seed(0)
 
