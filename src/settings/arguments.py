@@ -5,7 +5,7 @@ import torch
 from utils.timer import Timer
 import utils.pseudo_random as pseudo_random
 import utils.output as output
-
+from settings.constants import OpponentType
 
 """Section Data Management and Paths"""
 # the directory for data files
@@ -33,8 +33,7 @@ value_net_name = 'final'
 # the extension of a neural net file
 value_net_extension = '.tar'
 # flag whether to use sqlite database for bucketing information (otherwise use data files)
-use_sqlite = True
-
+use_sqlite = False
 
 """Section CFR Iterations"""
 # the number of iterations that DyypHoldem runs CFR for
@@ -42,13 +41,11 @@ cfr_iters = 1000
 # the number of preliminary CFR iterations which DyypHoldem doesn't factor into the average strategy (included in cfr_iters)
 cfr_skip_iters = 500
 
-
 """Section Data Generation"""
 # how many poker situations are solved simultaneously during data generation
 gen_batch_size = 10
 # how many solved poker situations are generated for use as training examples
 gen_data_count = 100000
-
 
 """Section Training"""
 # how many poker situations are used in each neural net training batch - has to be a multiple of gen_batch_size !
@@ -57,17 +54,16 @@ train_batch_size = 1000
 epoch_count = 200
 # how often to save the model during training
 save_epoch = 10
-# automatically save best epoch as final model
+# automatically save the best epoch as final model
 save_best_epoch = True
 # learning rate for neural net training
 learning_rate = 0.001
 # resume training if a final model already exists
 resume_training = False
 
-
 """Section Torch"""
 # flag to use GPU for calculations
-use_gpu = True
+use_gpu = False
 # default tensor types
 if not use_gpu:
     Tensor = torch.FloatTensor
@@ -82,19 +78,18 @@ else:
 # device name for torch
 device = torch.device('cpu') if not use_gpu else torch.device('cuda')
 
-
 """Section Random"""
 # flag to choose between official or internal random number generator - set to 'True' for reproducibility
 use_pseudo_random = False
 if use_pseudo_random:
     pseudo_random.manual_seed(123)
 
-
 """Section Global Objects"""
 # global logger
 use_loguru = True
 if use_loguru:
     import loguru
+
     logger = loguru.logger
     logger.remove(0)
     logger.level("LOADING", no=8, color="<fg #944100><bold>", icon="@")
@@ -105,11 +100,23 @@ if use_loguru:
     logging_level_stderr = "TRACE"
     logging_level_file = "TRACE"
     logger.add(sys.stderr, format=log_format_stderr, level=logging_level_stderr)
-    logger.add("../../logs/dyypholdem.log", format=log_format_file, level=logging_level_file, rotation="10 MB")
+    logger.add("../logs/dyypholdem.log", format=log_format_file, level=logging_level_file, rotation="10 MB")
 else:
     logger = output.DummyLogger("TRACE")
 
 # a global timer used to measure loading and calculation times
+
+"""CDBR Section"""
+cdbr = True
+cdbr_type = OpponentType.slumbot
+cdbr_new_initialization = True
+
+"""Section analysis"""
+results_path = "G:/My Drive/Doktorat/BigExperimentLogs/DyypHoldem"
+results_folder = "CDBR vs Slumbot"
+
+t_test_folders = ["LBR vs Uniform", "CDBR vs Uniform"]
+
 timer = Timer(logger)
 
 logger.info("Environment setup complete - initializing...")
