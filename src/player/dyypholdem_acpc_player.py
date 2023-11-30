@@ -71,7 +71,10 @@ def run(server, port):
             winnings += hand_winnings
             arguments.logger.success(f"Hand completed. Hand winnings: {hand_winnings}, Total winnings: {winnings} in hand {hand}")
             if args.log:
-                log_line(f"{hand} {hand_winnings} {winnings}", args.log)
+                if arguments.cdrnr:
+                    log_line(f"{hand} {hand_winnings} {winnings}", args.log + "p=" + str(arguments.cdrnr_p))
+                else:
+                    log_line(f"{hand} {hand_winnings} {winnings}", args.log)
             hand += 1
 
     arguments.logger.success(f"Game ended >>> Total winnings: {winnings}")
