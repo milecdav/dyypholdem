@@ -5,7 +5,7 @@ import torch
 from utils.timer import Timer
 import utils.pseudo_random as pseudo_random
 import utils.output as output
-from settings.constants import CDBRType
+from settings.constants import OpponentType
 
 """Section Data Management and Paths"""
 # the directory for data files
@@ -105,17 +105,32 @@ else:
     logger = output.DummyLogger("TRACE")
 
 # a global timer used to measure loading and calculation times
+"""Section slumbot connection"""
+slumbot_username = "your_username"
+slumbot_password = "your_password"
 
 """CDBR Section"""
-cdbr = True
-cdbr_type = CDBRType.slumbot
+cdbr = False
+cdbr_type = OpponentType.always_call
 cdbr_new_initialization = True
+cdbr_only_fold_call_rounds = None
+cdbr_strategy_path = "C:/Programy/dyypholdem/data/strategy{}.pkl"
+cdbr_ready_path = "C:/Programy/dyypholdem/data/ready{}.txt"
+
+"""CDRNR Section"""
+cdrnr = False
+# p = 0 -> cdbr, p = 1 -> deepstack
+cdrnr_p = 1
 
 """Section analysis"""
 results_path = "G:/My Drive/Doktorat/BigExperimentLogs/DyypHoldem"
-results_folder = "CDBR vs Slumbot"
+results_folder = ["LBR vs Slumbot", "CDBR vs Slumbot", "LBR(fc12) vs Slumbot", "LBR(c12) vs Slumbot", "CDBR(fc12) vs Slumbot"]
+# results_folder = ["DS vs Uniform", "CDBR vs Uniform", "LBR vs Uniform", "LBR(f) vs Uniform", "CDBR(fc12) vs Uniform", "LBR(fc12) vs Uniform", "LBR vs CallRaise", "LBR(fc12) vs CallRaise"]
 
-t_test_folders = ["LBR vs Uniform", "CDBR vs Uniform"]
+t_test_folders = ["CDBR vs SlumBot", "LBR vs SlumBot"]
+
+"""Section prints"""
+print_strategy = False
 
 timer = Timer(logger)
 
