@@ -259,7 +259,7 @@ class ContinualResolving(object):
         assert abs(1 - hand_strategy.sum()) < 0.001
         arguments.logger.success(str_strategies)
         if arguments.log_strategy:
-            with open("C:/Programy/dyypholdem/logs/strategy.txt", "a") as f:
+            with open(arguments.log_strategy_path, "a") as f:
                 f.write(str_strategies + "\n")
 
         # 3.0 sample the action by doing cumsum and uniform sample
