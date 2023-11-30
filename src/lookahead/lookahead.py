@@ -38,8 +38,11 @@ class Lookahead(object):
 
     pot_size: dict
     ranges_data: Dict[int, arguments.Tensor]
+    fixed_ranges_data: Dict[int, arguments.Tensor]
+    base_ranges_data: Dict[int, arguments.Tensor]
     average_strategies_data: dict
     current_strategy_data: dict
+    fixed_strategy_data: Dict[int, arguments.Tensor]
     cfvs_data: dict
     average_cfvs_data: dict
     regrets_data: Dict[int, arguments.Tensor]
@@ -103,6 +106,9 @@ class Lookahead(object):
     def resolve_first_node(self, player_range, opponent_range):
         self.ranges_data[1][:, :, :, :, 0, :].copy_(player_range)
         self.ranges_data[1][:, :, :, :, 1, :].copy_(opponent_range)
+        if arguments.cdrnr:
+            self.base_ranges_data[1][:, :, :, :, 0, :].copy_(player_range)
+            self.base_ranges_data[1][:, :, :, :, 1, :].copy_(opponent_range)
         self._compute()
 
     # --- Re-solves the lookahead using an input range for the player and
@@ -119,6 +125,8 @@ class Lookahead(object):
 
         self.reconstruction_gadget = CFRDGadget(self.tree.board, player_range, opponent_cfvs)
         self.ranges_data[1][:, :, :, :, 0, :].copy_(player_range)
+        if arguments.cdrnr:
+            self.base_ranges_data[1][:, :, :, :, 0, :].copy_(player_range)
         self.reconstruction_opponent_cfvs = opponent_cfvs
         self._compute()
 
@@ -181,6 +189,10 @@ class Lookahead(object):
         scaler = scaler.mul_(arguments.cfr_iters - arguments.cfr_skip_iters)
         out.children_cfvs.div_(scaler.view(out.children_cfvs.shape))
 
+        if arguments.cdrnr:
+            out.achieved_cfvs.mul_(arguments.cdrnr_p)
+            out.children_cfvs.mul_(arguments.cdrnr_p)
+
         assert out.children_cfvs is not None
         assert out.strategy is not None
         assert out.achieved_cfvs is not None
@@ -229,9 +241,9 @@ class Lookahead(object):
             self.print_spaces(depth)
             print(f"Strategy in depth {depth} with bets {node.bets}")
             for child in node.children:
-                self.print_spaces(depth)         
+                self.print_spaces(depth)
                 lc = child.lookahead_coordinates.cpu().numpy()
-                for action_prob in self.current_strategy_data[depth + 1][int(lc[0])-1, int(lc[1])-1, int(lc[2])-1, 0, :].cpu().numpy():
+                for action_prob in self.current_strategy_data[depth + 1][int(lc[0]) - 1, int(lc[1]) - 1, int(lc[2]) - 1, 0, :].cpu().numpy():
                     print(action_prob, end=",")
                 print()
             for child in node.children:
@@ -244,6 +256,8 @@ class Lookahead(object):
         if arguments.cdbr:
             if not arguments.cdbr_new_initialization:
                 self._initialize_opponent_strategy()
+        if arguments.cdrnr:
+            self._compute_fixed_ranges()
         if arguments.print_strategy:
             self.print_strategy()
         for iteration in range(1, arguments.cfr_iters + 1):
@@ -255,6 +269,7 @@ class Lookahead(object):
             self._compute_cfvs()
             self._compute_regrets()
             self._compute_cumulate_average_cfvs(iteration)
+        # print(global_variables.cdbr_normal_resolve)
         if arguments.print_strategy:
             self.print_strategy()
         # print([self.average_strategies_data[2][i, :, :, :, 0] for i in range(self.current_strategy_data[2].shape[0])])
@@ -268,9 +283,9 @@ class Lookahead(object):
     def _initialize_opponent_strategy(self):
         for d in range(2, self.depth + 1):
             if (global_variables.cdbr_normal_resolve and d % 2 != 0) or (not global_variables.cdbr_normal_resolve and d % 2 == 0):
-                if arguments.cdbr_type == constants.CDBRType.always_fold:
+                if arguments.cdbr_type == constants.OpponentType.always_fold:
                     self.current_strategy_data[d][0, :, :, :, :] = 1.
-                elif arguments.cdbr_type == constants.CDBRType.always_call:
+                elif arguments.cdbr_type == constants.OpponentType.always_call:
                     self.current_strategy_data[d][1, :, :, :, :] = 1.
 
     # --- Generates the opponent's range for the current re-solve iteration using
@@ -281,6 +296,10 @@ class Lookahead(object):
         if self.reconstruction_opponent_cfvs is not None:
             if arguments.cdbr:
                 self.ranges_data[1][:, :, :, :, 1, :].copy_(global_variables.cdbr_opponent_range)
+            elif arguments.cdrnr:
+                opponent_range = self.reconstruction_gadget.compute_opponent_range(self.cfvs_data[1][:, :, :, :, 0, :])
+                self.base_ranges_data[1][:, :, :, :, 1, :].copy_(opponent_range)
+                self.ranges_data[1][:, :, :, :, 1, :].copy_(torch.add(torch.mul(self.base_ranges_data[1][:, :, :, :, 1, :], arguments.cdrnr_p), self.fixed_ranges_data[1][:, :, :, :, 1, :], alpha=1 - arguments.cdrnr_p))
             else:
                 # note that CFVs indexing is swapped, thus the CFVs for the reconstruction player are for player '1'
                 opponent_range = self.reconstruction_gadget.compute_opponent_range(self.cfvs_data[1][:, :, :, :, 0, :])
@@ -303,7 +322,7 @@ class Lookahead(object):
                 self.current_strategy_data[d] = torch.div(self.positive_regrets_data[d], self.regrets_sum[d].expand_as(self.positive_regrets_data[d]))
             elif not ((global_variables.cdbr_normal_resolve and d % 2 != 0)
                       or (not global_variables.cdbr_normal_resolve and d % 2 == 0)) \
-                    or (arguments.cdbr_type == constants.CDBRType.uniform_random and iteration == 1 and not arguments.cdbr_new_initialization):
+                    or (arguments.cdbr_type == constants.OpponentType.uniform_random and iteration == 1 and not arguments.cdbr_new_initialization):
                 self.current_strategy_data[d] = torch.div(self.positive_regrets_data[d], self.regrets_sum[d].expand_as(self.positive_regrets_data[d]))
 
             # print(self.current_strategy_data[d][1, 0, 0, 0, :])
@@ -311,10 +330,47 @@ class Lookahead(object):
     # --- Using the players' current strategies, computes their probabilities of
     # -- reaching each state of the lookahead.
     # -- @local
+    def _compute_fixed_ranges(self):
+        self.fixed_ranges_data[1][:, :, :, :, 1, :].copy_(global_variables.cdbr_opponent_range)
+        self.fixed_ranges_data[1][:, :, :, :, 0, :].copy_(global_variables.cdbr_opponent_range)
+        for d in range(1, self.depth):
+            current_level_ranges = self.fixed_ranges_data[d]
+            next_level_ranges = self.fixed_ranges_data[d + 1]
+            prev_layer_terminal_actions_count = self.terminal_actions_count[d - 1]
+            prev_layer_actions_count = self.actions_count[d - 1]
+            prev_layer_bets_count = self.bets_count[d - 1]
+            gp_layer_nonallin_bets_count = self.nonallinbets_count[d - 2]
+            gp_layer_terminal_actions_count = self.terminal_actions_count[d - 2]
+
+            # copy the ranges of inner nodes and transpose
+            inner_nodes: torch.Tensor = current_level_ranges[prev_layer_terminal_actions_count:, :gp_layer_nonallin_bets_count, :, :, :, :]
+            inner_nodes = inner_nodes.transpose(1, 2)
+            inner_nodes = torch.reshape(inner_nodes, self.inner_nodes[d].shape)
+
+            super_view = inner_nodes
+            super_view = super_view.view(1, prev_layer_bets_count, -1, self.batch_size, constants.players_count,
+                                         game_settings.hand_count)
+            super_view = super_view.expand_as(next_level_ranges)
+            next_level_strategies = self.fixed_strategy_data[d + 1]
+
+            next_level_ranges.copy_(super_view)
+
+            # multiply the ranges of the acting player by his strategy
+            if (global_variables.cdbr_normal_resolve and self.acting_player[d] == 2) or \
+                    ((not global_variables.cdbr_normal_resolve) and self.acting_player[d] == 1):
+                next_level_ranges[:, :, :, :, self.acting_player[d] - 1, :].mul_(next_level_strategies)
+
+    # --- Using the players' current strategies, computes their probabilities of
+    # -- reaching each state of the lookahead.
+    # -- @local
     def _compute_ranges(self):
         for d in range(1, self.depth):
-            current_level_ranges = self.ranges_data[d]
-            next_level_ranges = self.ranges_data[d + 1]
+            if arguments.cdrnr:
+                current_level_ranges = self.base_ranges_data[d]
+                next_level_ranges = self.base_ranges_data[d + 1]
+            else:
+                current_level_ranges = self.ranges_data[d]
+                next_level_ranges = self.ranges_data[d + 1]
             prev_layer_terminal_actions_count = self.terminal_actions_count[d - 1]
             prev_layer_actions_count = self.actions_count[d - 1]
             prev_layer_bets_count = self.bets_count[d - 1]
@@ -337,6 +393,17 @@ class Lookahead(object):
 
             # multiply the ranges of the acting player by his strategy
             next_level_ranges[:, :, :, :, self.acting_player[d] - 1, :].mul_(next_level_strategies)
+
+            if arguments.cdrnr:
+                if global_variables.cdbr_normal_resolve:
+                    player = 0
+                else:
+                    player = 1
+
+                self.ranges_data[d + 1][:, :, :, :, 1 - player, :].copy_(
+                    torch.add(torch.mul(next_level_ranges[:, :, :, :, 1 - player, :], arguments.cdrnr_p),
+                              self.fixed_ranges_data[d + 1][:, :, :, :, 1 - player, :], alpha=1 - arguments.cdrnr_p))
+                self.ranges_data[d + 1][:, :, :, :, player, :].copy_(next_level_ranges[:, :, :, :, player, :])
 
     # --- Updates the players' average strategies with their current strategies.
     # -- @param iter the current iteration number of re-solving

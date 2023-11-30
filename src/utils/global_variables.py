@@ -7,3 +7,4 @@ cdbr_node_to_index = None
 cdbr_player = None
 max_id = 0
 cdbr_opponent_range = None
+cdrnr_p = None

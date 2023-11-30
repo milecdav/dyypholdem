@@ -157,6 +157,7 @@ class LookaheadBuilder(object):
         self.lookahead.ranges_data = {}
         self.lookahead.average_strategies_data = {}
         self.lookahead.current_strategy_data = {}
+
         self.lookahead.cfvs_data = {}
         self.lookahead.average_cfvs_data = {}
         self.lookahead.regrets_data = {}
@@ -171,10 +172,20 @@ class LookaheadBuilder(object):
         self.lookahead.inner_nodes_p1 = {}
         self.lookahead.swap_data = {}
 
+        if arguments.cdrnr:
+            self.lookahead.fixed_ranges_data = {}
+            self.lookahead.base_ranges_data = {}
+            self.lookahead.fixed_strategy_data = {}
+
         # create the data structure for the first two layers
         # data structures [actions x parent_action x grandparent_id x batch x players x range]
         self.lookahead.ranges_data[1] = arguments.Tensor(1, 1, 1, self.lookahead.batch_size, constants.players_count, game_settings.hand_count).fill_(1.0 / game_settings.hand_count)
         self.lookahead.ranges_data[2] = arguments.Tensor(self.lookahead.actions_count[1], 1, 1, self.lookahead.batch_size, constants.players_count, game_settings.hand_count).fill_(1.0 / game_settings.hand_count)
+        if arguments.cdrnr:
+            self.lookahead.fixed_ranges_data[1] = self.lookahead.ranges_data[1].clone().fill_(0)
+            self.lookahead.fixed_ranges_data[2] = self.lookahead.ranges_data[2].clone().fill_(1.0 / game_settings.hand_count)
+            self.lookahead.base_ranges_data[1] = self.lookahead.ranges_data[1].clone().fill_(0)
+            self.lookahead.base_ranges_data[2] = self.lookahead.ranges_data[2].clone().fill_(1.0 / game_settings.hand_count)
         self.lookahead.pot_size[1] = self.lookahead.ranges_data[1].clone().fill_(0)
         self.lookahead.pot_size[2] = self.lookahead.ranges_data[2].clone().fill_(0)
         self.lookahead.cfvs_data[1] = self.lookahead.ranges_data[1].clone().fill_(0)
@@ -189,6 +200,9 @@ class LookaheadBuilder(object):
         self.lookahead.average_strategies_data[2] = arguments.Tensor(self.lookahead.actions_count[1], 1, 1, self.lookahead.batch_size, game_settings.hand_count).fill_(0)
         self.lookahead.current_strategy_data[1] = None
         self.lookahead.current_strategy_data[2] = self.lookahead.average_strategies_data[2].clone().fill_(0)
+        if arguments.cdrnr:
+            self.lookahead.fixed_strategy_data[1] = None
+            self.lookahead.fixed_strategy_data[2] = self.lookahead.average_strategies_data[2].clone().fill_(0)
         self.lookahead.regrets_data[1] = None
         self.lookahead.regrets_data[2] = self.lookahead.average_strategies_data[2].clone().fill_(0)
         self.lookahead.current_regrets_data[1] = None
@@ -218,6 +232,9 @@ class LookaheadBuilder(object):
             self.lookahead.ranges_data[d] = arguments.Tensor(self.lookahead.actions_count[d - 1], self.lookahead.bets_count[d - 2], self.lookahead.nonterminal_nonallin_nodes_count[d - 2], self.lookahead.batch_size,
                                                              constants.players_count,
                                                              game_settings.hand_count).fill_(0)
+            if arguments.cdrnr:
+                self.lookahead.fixed_ranges_data[d] = self.lookahead.ranges_data[d].clone()
+                self.lookahead.base_ranges_data[d] = self.lookahead.ranges_data[d].clone()
             self.lookahead.cfvs_data[d] = self.lookahead.ranges_data[d].clone()
             self.lookahead.placeholder_data[d] = self.lookahead.ranges_data[d].clone()
             self.lookahead.pot_size[d] = self.lookahead.ranges_data[d].clone().fill_(game_settings.stack)
@@ -227,6 +244,8 @@ class LookaheadBuilder(object):
                                                                          self.lookahead.batch_size,
                                                                          game_settings.hand_count).fill_(0)
             self.lookahead.current_strategy_data[d] = self.lookahead.average_strategies_data[d].clone()
+            if arguments.cdrnr:
+                self.lookahead.fixed_strategy_data[d] = self.lookahead.average_strategies_data[d].clone()
             self.lookahead.regrets_data[d] = self.lookahead.average_strategies_data[d].clone().fill_(self.lookahead.regret_epsilon)
             self.lookahead.current_regrets_data[d] = self.lookahead.average_strategies_data[d].clone().fill_(0)
             self.lookahead.empty_action_mask[d] = self.lookahead.average_strategies_data[d].clone().fill_(1)
@@ -371,6 +390,15 @@ class LookaheadBuilder(object):
                             node.strategy[action_index, :].view(1, 1, 1, 1, game_settings.hand_count))
                     for action_index in range(len(node.children) - 2):
                         self.lookahead.current_strategy_data[layer + 1][self.lookahead.actions_count[layer] - action_index - 1:self.lookahead.actions_count[layer] - action_index,
+                        next_parent_id - 1:next_parent_id, next_gp_id - 1:next_gp_id, 0:1, :].copy_(node.strategy[len(node.children) - action_index - 1, :].view(1, 1, 1, 1, game_settings.hand_count))
+
+            if arguments.cdrnr and not node.terminal and node.current_player != constants.Players.Chance:
+                if (global_variables.cdbr_normal_resolve and layer % 2 == 0) or (not global_variables.cdbr_normal_resolve and layer % 2 != 0):
+                    for action_index in range(2):
+                        self.lookahead.fixed_strategy_data[layer + 1][action_index: action_index + 1, next_parent_id - 1:next_parent_id, next_gp_id - 1:next_gp_id, 0:1, :].copy_(
+                            node.strategy[action_index, :].view(1, 1, 1, 1, game_settings.hand_count))
+                    for action_index in range(len(node.children) - 2):
+                        self.lookahead.fixed_strategy_data[layer + 1][self.lookahead.actions_count[layer] - action_index - 1:self.lookahead.actions_count[layer] - action_index,
                         next_parent_id - 1:next_parent_id, next_gp_id - 1:next_gp_id, 0:1, :].copy_(node.strategy[len(node.children) - action_index - 1, :].view(1, 1, 1, 1, game_settings.hand_count))
 
             if (not node.terminal) and (node.current_player != constants.Players.Chance):

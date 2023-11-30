@@ -72,7 +72,7 @@ class ContinualResolving(object):
         self.player = state.player
         self.hand_id = state.hand_id
 
-        if arguments.cdbr:
+        if arguments.cdbr or arguments.cdrnr:
             # this removes the possible actions from the string since we resolve the first node
             global_variables.cdbr_player = state.player
             global_variables.cdbr_state = state
@@ -155,7 +155,7 @@ class ContinualResolving(object):
         if (node.street == 2 and len(state.actions[1]) == 0 and len(state.actions[0]) % 2 == 0) or \
                 (node.street > 2 and len(state.actions[node.street - 1]) == 0 and len(state.actions[node.street - 2]) % 2 == 1):
             return
-        if arguments.cdbr_type == constants.CDBRType.slumbot:
+        if arguments.cdbr_type == constants.OpponentType.slumbot:
             converted_state = slumbot_query.matchstate_string_to_slumbot_with_actions(state, [])
             matchstate_string, action = slumbot_query.remove_actions_from_matchstate_string(converted_state, 1)
             matchstate_strings = [matchstate_string]
@@ -212,7 +212,7 @@ class ContinualResolving(object):
             self.current_player_range = card_tools.normalize_range(node.board, self.current_player_range)
 
             # 1.3 opponent range if we do cdbr
-            if arguments.cdbr:
+            if arguments.cdbr or arguments.cdrnr:
                 self._update_opponent_range(state, node)
 
         # 2.0 first decision for P2
@@ -225,7 +225,7 @@ class ContinualResolving(object):
 
         # 3.0 handle game within the street
         else:
-            if arguments.cdbr:
+            if arguments.cdbr or arguments.cdrnr:
                 self._update_opponent_range(state, node)
             assert self.last_node.street == node.street
 
@@ -260,6 +260,8 @@ class ContinualResolving(object):
             str_strategies += action_str
         assert abs(1 - hand_strategy.sum()) < 0.001
         arguments.logger.success(str_strategies)
+        with open("C:/Programy/dyypholdem/logs/strategy.txt", "a") as f:
+            f.write(str_strategies + "\n")
 
         # 3.0 sample the action by doing cumsum and uniform sample
         if arguments.use_pseudo_random:
