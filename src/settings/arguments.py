@@ -5,7 +5,6 @@ import torch
 from utils.timer import Timer
 import utils.pseudo_random as pseudo_random
 import utils.output as output
-from settings.constants import OpponentType
 
 """Section Data Management and Paths"""
 # the directory for data files
@@ -105,12 +104,6 @@ else:
     logger = output.DummyLogger("TRACE")
 
 # a global timer used to measure loading and calculation times
-
-"""CDBR Section"""
-cdbr = True
-cdbr_type = OpponentType.slumbot
-cdbr_new_initialization = True
-
 """Section analysis"""
 results_path = "G:/My Drive/Doktorat/BigExperimentLogs/DyypHoldem"
 results_folder = "CDBR vs Slumbot"
