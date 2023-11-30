@@ -155,7 +155,7 @@ class ContinualResolving(object):
         if (node.street == 2 and len(state.actions[1]) == 0 and len(state.actions[0]) % 2 == 0) or \
                 (node.street > 2 and len(state.actions[node.street - 1]) == 0 and len(state.actions[node.street - 2]) % 2 == 1):
             return
-        if arguments.cdbr_type == constants.CDBRType.slumbot:
+        if arguments.cdbr_type == constants.OpponentType.slumbot:
             converted_state = slumbot_query.matchstate_string_to_slumbot_with_actions(state, [])
             matchstate_string, action = slumbot_query.remove_actions_from_matchstate_string(converted_state, 1)
             matchstate_strings = [matchstate_string]

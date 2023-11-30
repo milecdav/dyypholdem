@@ -268,9 +268,9 @@ class Lookahead(object):
     def _initialize_opponent_strategy(self):
         for d in range(2, self.depth + 1):
             if (global_variables.cdbr_normal_resolve and d % 2 != 0) or (not global_variables.cdbr_normal_resolve and d % 2 == 0):
-                if arguments.cdbr_type == constants.CDBRType.always_fold:
+                if arguments.cdbr_type == constants.OpponentType.always_fold:
                     self.current_strategy_data[d][0, :, :, :, :] = 1.
-                elif arguments.cdbr_type == constants.CDBRType.always_call:
+                elif arguments.cdbr_type == constants.OpponentType.always_call:
                     self.current_strategy_data[d][1, :, :, :, :] = 1.
 
     # --- Generates the opponent's range for the current re-solve iteration using
@@ -303,7 +303,7 @@ class Lookahead(object):
                 self.current_strategy_data[d] = torch.div(self.positive_regrets_data[d], self.regrets_sum[d].expand_as(self.positive_regrets_data[d]))
             elif not ((global_variables.cdbr_normal_resolve and d % 2 != 0)
                       or (not global_variables.cdbr_normal_resolve and d % 2 == 0)) \
-                    or (arguments.cdbr_type == constants.CDBRType.uniform_random and iteration == 1 and not arguments.cdbr_new_initialization):
+                    or (arguments.cdbr_type == constants.OpponentType.uniform_random and iteration == 1 and not arguments.cdbr_new_initialization):
                 self.current_strategy_data[d] = torch.div(self.positive_regrets_data[d], self.regrets_sum[d].expand_as(self.positive_regrets_data[d]))
 
             # print(self.current_strategy_data[d][1, 0, 0, 0, :])

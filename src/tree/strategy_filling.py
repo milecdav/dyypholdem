@@ -77,13 +77,13 @@ class StrategyFilling(object):
         if not node.terminal:
             node.strategy = arguments.Tensor(len(node.children), game_settings.hand_count).fill_(0.0)
             if arguments.cdbr:
-                if arguments.cdbr_type == constants.CDBRType.uniform_random:
+                if arguments.cdbr_type == constants.OpponentType.uniform_random:
                     node.strategy.fill_(1.0 / len(node.children))
-                elif arguments.cdbr_type == constants.CDBRType.always_fold:
+                elif arguments.cdbr_type == constants.OpponentType.always_fold:
                     node.strategy[0, :] = 1.0
-                elif arguments.cdbr_type == constants.CDBRType.always_call:
+                elif arguments.cdbr_type == constants.OpponentType.always_call:
                     node.strategy[1, :] = 1.0
-                elif arguments.cdbr_type == constants.CDBRType.slumbot:
+                elif arguments.cdbr_type == constants.OpponentType.slumbot:
                     if node.id in global_variables.cdbr_node_to_index:
                         results = global_variables.cdbr_query_results[global_variables.cdbr_node_to_index[node.id]]
                         if results[0] == "e":
