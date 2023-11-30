@@ -31,9 +31,6 @@ class ContinualResolving(object):
         self.first_node_resolving: Resolving = None
         self.starting_cfvs_p1: arguments.Tensor = None
 
-        if not arguments.cdbr:
-            self.resolve_first_node()
-
     # --- Solves a depth-limited lookahead from the first node of the game to get
     # -- opponent counterfactual values.
     # --
@@ -77,7 +74,8 @@ class ContinualResolving(object):
             global_variables.cdbr_player = state.player
             global_variables.cdbr_state = state
             global_variables.cdbr_normal_resolve = self.player == constants.Players.P1
-            self.resolve_first_node()
+
+        self.resolve_first_node()
 
     # --- Re-solves a node and chooses the re-solving player's next action.
     # -- @param node the game node where the re-solving player is to act (a table of
