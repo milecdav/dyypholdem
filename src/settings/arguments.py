@@ -131,6 +131,8 @@ t_test_folders = ["CDBR vs SlumBot", "LBR vs SlumBot"]
 
 """Section prints"""
 print_strategy = False
+log_strategy = False
+log_strategy_path = "C:/Programy/dyypholdem/logs/strategy.txt"
 
 timer = Timer(logger)
 
