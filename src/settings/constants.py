@@ -57,7 +57,7 @@ class ACPCActions(Enum):
     rraise = "raise"
 
 
-class CDBRType(Enum):
+class OpponentType(Enum):
     always_fold = "always_fold"
     always_call = "always_call"
     uniform_random = "uniform_random"
