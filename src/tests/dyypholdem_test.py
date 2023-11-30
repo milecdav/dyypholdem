@@ -11,34 +11,62 @@ continual_resolving = ContinualResolving()
 
 situations = [
     [
-        "MATCHSTATE:1:21::|AhAs",
-        "MATCHSTATE:1:21:c:|AhAs",
-        "MATCHSTATE:1:21:cr500:|AhAs",
-        "MATCHSTATE:1:21:cr500r1500:|AhAs",
-        "MATCHSTATE:1:21:cr500r1500c/:|AhAs/Ks2d6h",
-        "MATCHSTATE:1:21:cr500r1500c/r7500:|AhAs/Ks2d6h",
-        "MATCHSTATE:1:21:cr500r1500c/r7500c/:|AhAs/Ks2d6h/Td",
-        "MATCHSTATE:1:21:cr500r1500c/r7500c/c:|AhAs/Ks2d6h/Td",
+        "MATCHSTATE:0:0::5d5c|",
+        "MATCHSTATE:0:0:c:5d5c|",
+        "MATCHSTATE:0:0:cr300:5d5c|",
+        "MATCHSTATE:0:0:cr300c/:5d5c|/8dAs8s",
+        "MATCHSTATE:0:0:cr300c/c:5d5c|/8dAs8s",
+        "MATCHSTATE:0:0:cr300c/cc/:5d5c|/8dAs8s/4h",
+        "MATCHSTATE:0:0:cr300c/cc/c:5d5c|/8dAs8s/4h",
+        "MATCHSTATE:0:0:cr300c/cc/cc/:5d5c|/8dAs8s/4h/6d",
+        "MATCHSTATE:0:0:cr300c/cc/cc/c:5d5c|/8dAs8s/4h/6d",
+        "MATCHSTATE:0:0:cr300c/cc/cc/cc:5d5c|9hQd/8dAs8s/4h/6d",
     ],
     [
-        "MATCHSTATE:0:6:r350:Td9c|",
-        "MATCHSTATE:0:6:r350c/:Td9c|/JcKs9d"
+        "MATCHSTATE:1:1::|5dJd",
+        "MATCHSTATE:1:1:r200:|5dJd",
+        "MATCHSTATE:1:1:r200c/:|5dJd/2sTh2h",
+        "MATCHSTATE:1:1:r200c/c:|5dJd/2sTh2h",
     ],
-    [
-        "MATCHSTATE:0:0:r300:Qs9d|",
-        "MATCHSTATE:0:0:r300c/:Qs9d|/6d4d3c"
-    ],
-
-    [
-        "MATCHSTATE:1:3::|TcAd",
-        "MATCHSTATE:1:3:r300c/c:|TcAd/Ts8c6h",
-        "MATCHSTATE:1:3:r300c/cc/r900:|TcAd/Ts8c6h/As"
-    ],
-    [
-        "MATCHSTATE:0:0:r200:Ad9h|",
-        "MATCHSTATE:0:0:r200c/:Ad9h|/Ac9s9d",
-        "MATCHSTATE:0:0:r200c/cc/:Ad9h|/Ac9s9d/6s"
-    ],
+    # [
+    #     "MATCHSTATE:1:5::|8s7d",
+    #     "MATCHSTATE:1:5:r200:|8s7d",
+    #     "MATCHSTATE:1:5:r200c/:|8s7d/9c8d5c",
+    #     "MATCHSTATE:1:5:r200c/c:|8s7d/9c8d5c",
+    # ],
+    # [
+    #     "MATCHSTATE:1:15::|Th7s",
+    #     "MATCHSTATE:1:15:cc/c:|Th7s/5d6c8s",
+    # ],
+    # [
+    #     "MATCHSTATE:1:21::|AhAs",
+    #     "MATCHSTATE:1:21:c:|AhAs",
+    #     "MATCHSTATE:1:21:cr500:|AhAs",
+    #     "MATCHSTATE:1:21:cr500r1500:|AhAs",
+    #     "MATCHSTATE:1:21:cr500r1500c/:|AhAs/Ks2d6h",
+    #     "MATCHSTATE:1:21:cr500r1500c/r7500:|AhAs/Ks2d6h",
+    #     "MATCHSTATE:1:21:cr500r1500c/r7500c/:|AhAs/Ks2d6h/Td",
+    #     "MATCHSTATE:1:21:cr500r1500c/r7500c/c:|AhAs/Ks2d6h/Td",
+    # ],
+    # [
+    #     "MATCHSTATE:0:6:r350:Td9c|",
+    #     "MATCHSTATE:0:6:r350c/:Td9c|/JcKs9d"
+    # ],
+    # [
+    #     "MATCHSTATE:0:0:r300:Qs9d|",
+    #     "MATCHSTATE:0:0:r300c/:Qs9d|/6d4d3c"
+    # ],
+    #
+    # [
+    #     "MATCHSTATE:1:3::|TcAd",
+    #     "MATCHSTATE:1:3:r300c/c:|TcAd/Ts8c6h",
+    #     "MATCHSTATE:1:3:r300c/cc/r900:|TcAd/Ts8c6h/As"
+    # ],
+    # [
+    #     "MATCHSTATE:0:0:r200:Ad9h|",
+    #     "MATCHSTATE:0:0:r200c/:Ad9h|/Ac9s9d",
+    #     "MATCHSTATE:0:0:r200c/cc/:Ad9h|/Ac9s9d/6s"
+    # ],
 ]
 
 
